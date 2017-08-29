@@ -21,7 +21,6 @@ export default class BarsEditor extends LimitsBaseComponent {
             s.data.forEach(d=>{
                 let offets =  [...Array(d[2]).keys()]
                 offets.map((of,i)=>{
-                    //TODO: Бля - тут нужно на следующую дату переходить !!!
                     let dd = d[0];
                     let hh = d[1] + of;
                     if(hh>23) {
@@ -69,7 +68,11 @@ export default class BarsEditor extends LimitsBaseComponent {
                             _hours.map((hh,i2)=>{
                                 let key = `cell_${dd}_${hh}`
                                 let index = i1*24 + i2
-                                return <div ref={el=>this.cellRefs[key] = el} key={key} className="barEditorHourCell" onClick={(e,e1) => this._handleClick(key, e)}>{hh}</div>
+                                return <div ref={el=>this.cellRefs[key] = el} key={key} className="barEditorHourCell" onClick={(e,e1) => this._handleClick(key, e)}>
+                                    {hh}
+                                    {/* Сюда инжектить ячейку - у нее свойства - дочерние накидывать их рендерить дивами
+                                    либо сразу отдавать - брать по ключу коллекцию аккаунтов */}
+                                </div>
                             })
                         }
                     </div>

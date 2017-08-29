@@ -29,8 +29,7 @@ import * as CMD from './constants/commands'
 
 import './scss/checkboxes.scss'
 import './scss/base.scss'
-
-import  './main.css';
+import  './css/main.css';
 
 
 const initialState = {
