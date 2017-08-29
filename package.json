@@ -21,6 +21,8 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "babel-preset-stage-1": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "babel-preset-stage-3": "^6.24.1",
     "classnames": "^2.2.5",
     "css-loader": "^0.28.5",
     "d3": "^4.10.0",
@@ -38,6 +40,7 @@
     "sass-loader": "^6.0.6",
     "scss-loader": "0.0.1",
     "style-loader": "^0.18.2",
+    "stylenames": "^1.1.6",
     "webix": "^4.4.0",
     "webpack": "^3.5.5"
   },

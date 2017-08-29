@@ -21,16 +21,31 @@ export default class SchedulerAccountsDetails extends LimitsBaseComponent {
 
     render(){
 
-        let accs = this.props.accounts
+        if(this.props.current_mode === 'edit'){
+            return <div>
+                <p>
+                    <button className='btn' onClick={this.onChangeAction}>{this.nextMode()}</button>{' '}
+                </p>
+                <p>
+                    CTRL+CLICK отметка одного часа <br/>
+                    SHIFT+CLICK отметка диапазона<br/>
+                    CLICK информация по аккаунту<br/>
+                </p>
+            </div>
+        }else{
+            let accs = this.props.accounts
             .filter((row,i)=>{return row.selected})
             .map((row, i)=>{return <div key={row.accid}>{row.accid}</div>})
+            
+            //Перебрать детали в вывести информацию по аккаунтам (будет в самих записях аккаунтов)
+            return <div>
+                <p>
+                    <button className='btn' onClick={this.onChangeAction}>{this.nextMode()}</button>{' '}
+                </p>
+                {accs}
+            </div>
+        }
 
-        //Перебрать детали в вывести информацию по аккаунтам (будет в самих записях аккаунтов)
-        return <div>
-            <p>
-                <button className='btn' onClick={this.onChangeAction}>{this.nextMode()}</button>{' '}
-            </p>
-            {accs}
-        </div>
+
     }
 }

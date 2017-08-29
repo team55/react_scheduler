@@ -1,6 +1,5 @@
 @import "colors";
 
-
 .gantt_info {
 
   .grid-cell {
@@ -108,11 +107,16 @@
 
 
 .barEditorHourCell.selected {
+  //background: rgba(255, 202, 68, 0.22);
+  color: #fff;
+  font-weight: bold;
+}
+
+.barEditorHourCell.higlight {
   background: rgba(255, 202, 68, 0.22);
   color: $blue_color;
   font-weight: bold;
 }
-
 
 .barEditorHourCell.disabled {
   background: rgba(255, 202, 68, 0.22);

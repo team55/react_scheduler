@@ -7,6 +7,8 @@ import Toggle from '../components/Toggle.jsx'
 import classNames from 'classnames'
 import '../modules/colorGenerator'
 
+import '../scss/accounts_table.scss'
+
 export default class SchedulerAccounts extends LimitsBaseComponent {
 
     //Два режима
@@ -120,7 +122,7 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
                 </form>
                 {/*-------------------------- TODO: УДАЛИТЬ ----------------------------------*/}
 
-                <table className="accounts_table">
+                <table id="accounts-table">
 
                 {/* <this.Header1 />
                 <thead><tr>{this.titles.map(th)}</tr></thead>

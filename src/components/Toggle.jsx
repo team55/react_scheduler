@@ -23,10 +23,10 @@ export default class Toggle extends LimitsBaseComponent {
     //log(id)
 
     return (
-        <p>
+        <div>
           <input id={id} type='checkbox' value='UID8' checked={this.props.selected} onChange={this.handleClick}/>
           <label htmlFor={id}>{this.props.accid}</label>
-        </p>
+        </div>
     );
   }
 

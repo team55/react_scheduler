@@ -1,9 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import _ from 'lodash'
+import classNames from 'classnames'
+// import styleNames from 'stylenames'
 
 import {cellSize} from "../constants/props";
 import * as CMD from '../constants/commands'
 import LimitsBaseComponent, {log} from '../components/LimitsBaseComponent.jsx'
+import '../modules/colorGenerator'
 
 import '../scss/scheduler.scss';
 
@@ -11,75 +15,16 @@ export default class BarsEditor extends LimitsBaseComponent {
    
     constructor(props){
         super('BARS EDITOR',props)
-        this.prepareGrid = this.prepareGrid.bind(this)
-
-        //Подготавливаем все данные расписания - в рендере поготовка
-        //Рисуем как набор дивов которые могут менять размеры - дни
-
-        this.prepared_schedules = []
-        props.schedules.forEach(s=>{
-            s.data.forEach(d=>{
-                let offets =  [...Array(d[2]).keys()]
-                offets.map((of,i)=>{
-                    let dd = d[0];
-                    let hh = d[1] + of;
-                    if(hh>23) {
-                        let diff_days = hh/24 //число дней
-                        dd+= diff_days
-                        hh-=24*diff_days
-                    }
-                     this.prepared_schedules[`${s.accid}_${dd}-${hh}`] = 1
-                })
-            })
-        })
-        log('prepared',this.prepared_schedules)
-
+        this._onClick = this._onClick.bind(this)
+        this._onDragStart = this._onDragStart.bind(this)
+        this._onDrop = this._onDrop.bind(this)
         this.size=[cellSize*24+64,cellSize*props.days+64]
-
-        this.grid = this.prepareGrid(props)
-        this.cellRefs = []
-
+        this.cellRefs = new Map()
+        this.selected_index = 0
     }
 
-    prepareGrid(props){
-        log('prepareGrid',this)
-        let _days =  [...Array(props.days).keys()]
-        let _hours =  [...Array(24).keys()]
 
-        //todo: стли ячейки аккаунта
-        // const styles_cell = {
-        //     width: cellSize,
-        // style={styles_cell}
-        // }
-
-        return <div>
-            <div className="barEditorDay" ></div>
-            {
-                _hours.map((hh,i2)=>{
-                    let key = `hcell_${hh}`
-                    return <div key={key} className="barEditorHourHeader">{hh}</div>
-                })
-            }
-            {
-                _days.map((dd,i1)=>{
-                    return <div className="barEditorDayCell" key={"dat_"+dd}>
-                        <div className="barEditorDay" >{dd+1}</div>
-                        {
-                            _hours.map((hh,i2)=>{
-                                let key = `cell_${dd}_${hh}`
-                                let index = i1*24 + i2
-                                return <div ref={el=>this.cellRefs[key] = el} key={key} className="barEditorHourCell" onClick={(e,e1) => this._handleClick(key, e)}>
-                                    {hh}
-                                    {/* Сюда инжектить ячейку - у нее свойства - дочерние накидывать их рендерить дивами
-                                    либо сразу отдавать - брать по ключу коллекцию аккаунтов */}
-                                </div>
-                            })
-                        }
-                    </div>
-                })
-            }
-        </div>
-
+    render() {
 
         //Дальше задача - найти нужны див и воткнуть дочерний элемент
         // return <div>
@@ -114,11 +59,6 @@ export default class BarsEditor extends LimitsBaseComponent {
         //     }
         // </div>
 
-    }
-
-
-    render() {
-
 
         // //TODO: ветка по дням основная и не трогается - в нее коммитятся остальные
         // return <div>
@@ -140,49 +80,265 @@ export default class BarsEditor extends LimitsBaseComponent {
         //                 cursor: 'pointer',
         //                 shapeRendering: 'crispEdges'
         //         };
-        //
         //             //Ячейка которую будем искать что бы засунуть данные
         //             const cellkey = `cell${row.day}-${row.hour}`
-        //
-        //
-        //
-        //
         //             return <div key={cellkey} style={styles}>{`${row.day}:${row.hour}`}</div>
         //         })
         //
         //     }
         // </div>
 
-        //TODO: Сделать элемент day_cell а у него дочерние? как динамически добавить?
-        //Пока получается следующий способ - элемент ячейка - у нее стейт - дочерние
-        //Находим нужный элемент и устанавливаем стейт
-        return this.grid
+        this.prepared_schedules = new Map()
+        this.prepared_locks = new Map()
+        this.prepared_templates = new Map()
+        this.prepared_other_schedules = new Map() //TODO: забить попозже
+
+        this.currentColor = getColor(this.props.current_account)
+        
+        let prepareMap = function(m,src){
+            src.forEach(dt=>{
+                let idx_start = (dt[0]-1)*24 + dt[1]    
+                let idx_stop = (dt[2]-1)*24 + dt[3]    
+                log('start creating',idx_start, idx_stop)    
+                for (let i = idx_start; i <= idx_stop; i++) {
+                    m.set(i,6) //TODO: число столов аккаунта??
+                }
+            })
+        }
+
+        this.props.schedules
+            .filter(s=>s.accid===this.props.current_account)
+            .forEach((acc)=>{
+                prepareMap(this.prepared_schedules, acc.data)
+                prepareMap(this.prepared_locks, acc.locks)
+                prepareMap(this.prepared_templates, acc.templates)
+        })
+
+
+
+        log('prepared',this.prepared_schedules)
+
+        let _days =  [...Array(this.props.days).keys()]
+        let _hours =  [...Array(24).keys()]
+
+        return <div>
+            <div className="barEditorDay" ></div>
+            {
+                _hours.map((hh,i2)=>{
+                    let key = `hcell_${hh}`
+                    return <div key={key} className="barEditorHourHeader">{hh}</div>
+                })
+            }
+            {
+                _days.map((dd,i1)=>{
+                    return <div className="barEditorDayCell" key={"dat_"+dd}>
+                        <div className="barEditorDay" >{dd+1}</div>
+                        {
+                            _hours.map((hh,i2)=>{
+                                let key = `cell_${dd}_${hh}`
+                                let index = i1*24 + i2
+
+                                //Бордюр может быть??    
+                                const cellStyles = {}
+                                if(this.prepared_schedules.has(index)){
+                                    cellStyles.background = this.currentColor
+                                }
+
+                                const cellClasses = classNames({
+                                    'barEditorHourCell': true,
+                                    'disabled':false, //markers
+                                    'selected': this.prepared_schedules.has(index)
+                                });
+
+                                return <div draggable="true" 
+                                        style={cellStyles}
+                                        className={cellClasses}
+                                        ref={el=>this.cellRefs.set(key,el)} 
+                                        key={key} 
+                                        onClick={ (event)=>this._onClick(key, event) }
+                                        onDragStart={ (event)=>this._onDragStart(key, event) }
+                                        onDragEnd={ (event)=>this._onDragEnd(key, event) }
+                                        onDragOver={ (event)=>this._onDragOver(key, event)} 
+                                        onDrop={(event)=>this._onDrop(key, event)}
+                                    >
+                                    {hh}
+                                    {/* Сюда инжектить ячейку - у нее свойства - дочерние накидывать их рендерить дивами
+                                    либо сразу отдавать - брать по ключу коллекцию аккаунтов 
+                                    либо аккаунты кроме текущего (рамка как индикатор ошибки - при превышении лимита и др.)
+                                    */}
+                                </div>
+                            })
+                        }
+                    </div>
+                })
+            }
+        </div>
 
     }
 
+    //----------------------------------------------------
+
+    setStartCell(key){
+        let indexes = [...this.cellRefs.keys()]
+        this.selected_index = indexes.indexOf(key)
+    }
+
+    setEndCell(key){
+        let indexes = [...this.cellRefs.keys()]
+        let index = indexes.indexOf(key)
+        let min_idx = Math.min(index, this.selected_index)
+        let max_idx = Math.max(index, this.selected_index)
+        log('подсвечиваем ячейки', min_idx,max_idx)
+        indexes.forEach(
+            el => this.cellRefs.get(el).className = "barEditorHourCell"
+        )    
+        indexes.slice(min_idx,max_idx+1).forEach(
+            el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
+        )    
+    }
+
+    markFromStartToEndCell(key){
+        let indexes = [...this.cellRefs.keys()]
+        let index = indexes.indexOf(key)
+        let min_idx = Math.min(index, this.selected_index)
+        let max_idx = Math.max(index, this.selected_index)
+        log('Выделяем ячейки', min_idx,max_idx)
+        indexes.slice(min_idx,max_idx+1).forEach(
+            el => {
+                //Определяем начало диапазона и конец
+                log('Выделяем', el)
+            }
+            
+        )    
+    }
 
 
-    _handleClick(key, el){
-        this.cellRefs[key].className = "barEditorHourCell selected"
-        log('cell click', key, el)
+    //----------------------------------------------------
+    _onDragStart(key, event){
+        // event.dataTransfer.setData('data', JSON.stringify("test")); 
+        //log(event.type, key) 
+        this.setStartCell(key)    
+    }
 
-        // //TODO: Клик начало выбора ячейки второй клик - окончание периода даже если на той же клетке
-        // //TODO: Клик с зажатым ctrl отдельные ячейки
-        // //клик с нажатым контролом - если до этого начато выделение - окончание периода, иначе выделение ячейки
-        //
-        // //log(d3.event)
-        // //if (d3.event.defaultPrevented) return; // dragged - если делать call
-        //
-        // if (d3.event.ctrlKey) {
-        //     //меняем статус отдельного элемента
-        //     if(d3.event.type=='contextmenu') d3.event.preventDefault(); //на mac os нажали с ctrl
-        //     d3.select(element).classed('state--selected', data.pressed = !data.pressed)  // в обработчике меняем значение переменной и вычисляем класс
-        //     return
+    _onDragOver(key,event) {
+        //log(event.type, key) 
+        event.preventDefault()
+        this.setEndCell(key)
+    }
+
+    _onDrop(key, event) {
+        log(event.type, key) 
+        event.preventDefault();
+        // let data;
+        // try {
+        //     data = JSON.parse(event.dataTransfer.getData('data'));
+        // } catch (e) {
+        //     return;
         // }
-        // if (d3.event.shiftKey) {
-        //     //Пока ника не задействовано
+        // log(data);
+        this.markFromStartToEndCell(key)
+     }
+
+
+
+    _onDragEnd(key, event){
+        log(event.type, key, event) 
+    }
+
+
+    _onClick(key,event) {
+        //Двойной клик срабатывает вместе с одинарным - такова особенность дом модели
+
+        // log(event, key) 
+        // log("CTRL",event.ctrlKey)
+        // log("ALT",event.altKey)
+        // log("SHIFT",event.shiftKey)
+
+        let ev = {type: event.type, ctrlKey: event.ctrlKey,altKey:event.altKey,shiftKey:event.shiftKey}
+
+        
+        if (!this._delayedClick) {
+            log('add handler')
+            this._delayedClick = _.debounce(this._onClickOnce, 400);
+        }
+        
+        if (this.clickedOnce) {
+            this._delayedClick.cancel();
+            this.clickedOnce = false;
+            this._onClickTwice(key,ev);
+        } else {
+            this._delayedClick(key,ev);
+            this.clickedOnce = true;
+        }
+    }
+
+
+    _onClickTwice(key, event){
+        //как отследить до одинарного клика?
+        log('TWICE',event, key) 
+        //Удаляем если выделено
+    }
+
+    _onClickOnce(key, event){
+        this.clickedOnce = undefined;
+        log('ONCE',event, key) 
+
+        //TODO: Клик начало выбора ячейки второй клик - окончание периода даже если на той же клетке
+        //TODO: Клик с зажатым ctrl отдельные ячейки
+        //клик с нажатым контролом - если до этого начато выделение - окончание периода, иначе выделение ячейки
+
+        //SHIFT - выделение диапазона
+        //CTRL - отметка ячейки
+        //CLICK - info
+
+        
+        // log("CTRL",event.ctrlKey)
+        // log("ALT",event.altKey)
+        // log("SHIFT",event.shiftKey)
+
+        //Что будет если тут постучаться в child и добавить
+        
+
+        //Не могу достучаться ни к ключам ни к элементам    
+        // log(this.cellRefs, this.cellRefs.size()) // 3, 5, 7
+        // for (let value of this.cellRefs) {
+        //     log(value) // 3, 5, 7
         // }
-        //
+
+
+        let indexes = [...this.cellRefs.keys()]
+        let index = indexes.indexOf(key)
+
+        if (event.ctrlKey) {
+            this.selected_index = 0;                
+            //FIXME Меняем стейт - надо будет в данных менять
+            this.cellRefs.get(key).className = "barEditorHourCell selected"
+            log('Выделяем ctrl', index)
+        }
+
+        if (event.shiftKey) {
+            if(this.selected_index>0){
+                let min_idx = Math.min(index, this.selected_index)
+                let max_idx = Math.max(index, this.selected_index)
+                log('Выделяем shift', min_idx,max_idx)
+                indexes.slice(min_idx,max_idx+1).forEach(
+                    el => this.cellRefs.get(el).className = "barEditorHourCell selected"
+                )    
+                this.selected_index = 0;      
+            }else{
+                this.selected_index = index;                
+                log('Начали выделять shift', index)
+            }
+
+        }
+
+
+        if (!(event.ctrlKey || event.shiftKey)) {
+            this.selected_index = 0;                
+        }
+
+        
+        
         // let DDs,HHs,DDe,HHe = 0
         // if(context.pressed){
         //     //Выделяем диапазон от начала выделения до кончания выделания
@@ -203,10 +359,7 @@ export default class BarsEditor extends LimitsBaseComponent {
         //         HHs = Math.min(context.select_hour,data.hour)
         //         HHe = Math.max(context.select_hour,data.hour)
         //     }
-        //
-        //     let min_idx = Math.min(index, context.select_index)
-        //     let max_idx = Math.max(index, context.select_index)
-        //
+        
         //     log('SELECT:',DDs,HHs,DDe,HHe, min_idx, max_idx)
         //
         //     //или просто по индексам??? - взять первый взять последний
@@ -231,6 +384,8 @@ export default class BarsEditor extends LimitsBaseComponent {
         //
         // context.pressed = !context.pressed
     }
+
+
 
 
 

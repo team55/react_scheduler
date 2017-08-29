@@ -1,0 +1,96 @@
+@import "colors";
+
+$border_blue: #B7DDF2; 
+
+#accounts-table {
+    border-collapse: collapse;
+    border-color: $border_blue;
+    border-style: solid;
+    border-width: 1px;
+    font-family: Arial,Helvetica,sans-serif;
+    font-size: 12px;
+    margin-top: 5px;
+    text-align: left;
+    width: 100%;
+
+    th {
+        // background: none repeat scroll 0 0 $border_blue;
+        // border-color: #ddd;
+        font-size: 11px;
+        font-weight: bold;
+        padding: 15px 10px 10px;
+    }
+    
+    tbody tr td {
+        background: none repeat scroll 0 0 #FFFFFF;
+    }
+
+    td {
+        border-top: 1px dashed #ddd;
+        color: #000000;
+        padding: 10px;
+    }
+    
+    tbody tr:hover td {
+        background: none repeat scroll 0 0 #FFCF8B;
+        color: #000000;
+    }
+
+    tbody tr.current td {
+        background: none repeat scroll 0 0 #FFCF8B;
+        color: #000000;
+    }
+}
+
+
+//----------------------------------------- УДАЛИТЬ ------------------------------------------
+
+
+/* .table > thead > tr > th, 
+.table > tbody > tr > th, 
+.table > tfoot > tr > th, 
+.table > thead > tr > td, 
+.table > tbody > tr > td, 
+.table > tfoot > tr > td, 
+.table > thead > tr > th, 
+.table-bordered  */
+.accounts_table,
+.accounts_table > thead > tr > th,
+.accounts_table > tbody > tr > td
+{
+  border: 1px solid #ebeff2;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+.accounts_table{
+  width: 100%;
+}
+
+
+.accounts_table > tbody > tr:hover {
+  background: #9f7e19 !important;
+}
+
+.accounts_table > tbody > tr.current {
+  border: 2px solid #000;
+  background: rgba(255, 68, 68, 0.36) !important;
+}
+
+/*tr:nth-child(even) {background: #CCC}*/
+/*tr:nth-child(odd) {background: #FFF}*/
+
+td:first-child {
+  padding-top: 5px;
+  padding-bottom: 1px;
+  text-align: center;
+  vertical-align: middle;/* пробовал top, bottom, baseline. Не помогает */
+}
+
+.accounts_table > thead > tr > th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #ebeff2;
+}
+
+
+

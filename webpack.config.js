@@ -47,12 +47,13 @@ module.exports = {
             exclude: /node_modules/,
             query: {
             //env включает в себя es2015, es2016, es2017, latest  
-            // Stage 0 - Strawman: just an idea, possible Babel plugin.
+            // Stage 0 - Strawman: just an idea, possible Babel plugin. Spread synt
             // Stage 1 - Proposal: this is worth working on.
             // Stage 2 - Draft: initial spec.
             // Stage 3 - Candidate: complete spec and initial browser implementations.
             // Stage 4 - Finished: will be added to the next yearly release.
-              presets: ['env', 'react', 'stage-0', 'stage-1', 'stage-2']
+            //, 'stage-0', 'stage-1', 'stage-3'
+              presets: ['env', 'react', 'stage-3']
             }
           }
          
