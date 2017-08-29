@@ -1,0 +1,120 @@
+@import "colors";
+
+
+.gantt_info {
+
+  .grid-cell {
+    fill: #fff;
+    stroke: $border-color;
+  }
+
+  //.grid-background {
+  //  //fill: none;
+  //  fill: #ffffff;
+  //}
+  //.grid-header {
+  //  fill: #ffffff;
+  //  stroke: $border-color;
+  //  stroke-width: 1.4;
+  //}
+  //
+  //
+  //.grid-row {
+  //  fill: #ffffff;
+  //}
+  //
+  //
+  ////Строка GT
+  //.row-line-group-gt {
+  //  stroke: $border-color;
+  //  //stroke: #00FF00;
+  //  //stroke: $light-border-color;;
+  //}
+  //
+  ////Строка BB
+  //.row-line-group-bb {
+  //  //stroke: $border-color;
+  //  stroke: $light-border-color;
+  //}
+  //
+  ////Строка аккаунта
+  //.row-line {
+  //  //stroke: #FF0000;
+  //  //stroke: $light-border-color;
+  //}
+  //
+  //
+  //.gt-text {
+  //  font-size: 14px;
+  //  fill: $text-light;
+  //  font-weight: bold;
+  //}
+  //
+  //.bb-text {
+  //  font-size: 12px;
+  //  fill: $text-light;
+  //}
+  //
+  //.account-text {
+  //  font-size: 12px;
+  //  fill: $text-account;
+  //}
+
+}
+
+
+
+
+.barEditorDayCell {
+  text-align: center;
+  font-weight: bold;
+  color: $orange_color;
+}
+
+.barEditorDay {
+  display: table-cell;
+  min-width: 28px;
+}
+
+
+.barEditorHourHeader {
+  color: $orange_color;
+  text-align: center;
+  font-weight: bold;
+  width: 30px;
+  height: 24px;
+  display: table-cell;
+}
+
+
+.barEditorHourCell {
+  font-weight: lighter;
+  color: $font_color1;
+
+  /*shapeRendering: 'crispEdges',*/
+  background: #fafafa;
+  cursor: pointer;
+  border: 1px solid #fff;
+  width: 28px;
+  height: 28px;
+
+  display: table-cell;
+}
+
+
+.barEditorHourCell:hover {
+  background: rgba(255, 68, 68, 0.22);
+}
+
+
+.barEditorHourCell.selected {
+  background: rgba(255, 202, 68, 0.22);
+  color: $blue_color;
+  font-weight: bold;
+}
+
+
+.barEditorHourCell.disabled {
+  background: rgba(255, 202, 68, 0.22);
+  color: $green_color;
+}

@@ -1,0 +1,46 @@
+{
+  "name": "scheduler2",
+  "version": "1.0.0",
+  "description": "Scheduler Attempt 2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "webpack --watch"
+  },
+  "keywords": [
+    "scheduler;",
+    "mes"
+  ],
+  "author": "maverick",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "classnames": "^2.2.5",
+    "css-loader": "^0.28.5",
+    "d3": "^4.10.0",
+    "extract-text-webpack-plugin": "^3.0.0",
+    "moment": "^2.18.1",
+    "node-sass": "^4.5.3",
+    "prop-types": "^15.5.10",
+    "react": "^15.6.1",
+    "react-addons-css-transition-group": "^15.6.0",
+    "react-dom": "^15.6.1",
+    "react-redux": "^5.0.6",
+    "redux": "^3.7.2",
+    "redux-devtools": "^3.4.0",
+    "resolve-url-loader": "^2.1.0",
+    "sass-loader": "^6.0.6",
+    "scss-loader": "0.0.1",
+    "style-loader": "^0.18.2",
+    "webix": "^4.4.0",
+    "webpack": "^3.5.5"
+  },
+  "dependencies": {
+    "webpack-dev-server": "^2.7.1"
+  }
+}
