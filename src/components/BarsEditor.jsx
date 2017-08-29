@@ -15,78 +15,22 @@ export default class BarsEditor extends LimitsBaseComponent {
    
     constructor(props){
         super('BARS EDITOR',props)
+        
         this._onClick = this._onClick.bind(this)
         this._onDragStart = this._onDragStart.bind(this)
         this._onDrop = this._onDrop.bind(this)
-        this.size=[cellSize*24+64,cellSize*props.days+64]
-        this.cellRefs = new Map()
+        this.markFromStartToEndCell = this.markFromStartToEndCell.bind(this)
+
+        this.size=[cellSize*24+64,cellSize*props.days+64] //??? вроде не нужно уже 
+        this.cellRefs = new Map() //??? вроде не нужно уже 
+        this.cellIndexes = new Map()
         this.selected_index = 0
     }
 
 
     render() {
 
-        //Дальше задача - найти нужны див и воткнуть дочерний элемент
-        // return <div>
-        //     {
-        //         this.datas.map((row, i)=>{
-        //
-        //             let accs = this.accounts_in_date[row.day];
-        //             // log(row)
-        //             const styles = {
-        //                 position: 'absolute',
-        //                 top: row.day*cellSize,    // computed based on child and parent's height
-        //                 left: row.hour*cellSize,   // computed based on child and parent's width
-        //                 width: cellSize,
-        //                 height: cellSize * (accs==0?1:accs), //В зависимости от числа аакаунтов в день
-        //                 background:'#fff',
-        //                 borderColor: '#111',
-        //                 borderWidth: '1px',
-        //                 borderStyle: 'solid',
-        //                 cursor: 'pointer',
-        //                 shapeRendering: 'crispEdges'
-        //             };
-        //
-        //             //Ячейка которую будем искать что бы засунуть данные
-        //             const cellkey = `cell${row.day}-${row.hour}`
-        //
-        //
-        //
-        //
-        //             return <div key={cellkey} style={styles}>{`${row.day}:${row.hour}`}</div>
-        //         })
-        //
-        //     }
-        // </div>
-
-
-        // //TODO: ветка по дням основная и не трогается - в нее коммитятся остальные
-        // return <div>
-        //     {
-        //         this.datas.map((row, i)=>{
-        //
-        //             let accs = this.accounts_in_date[row.day];
-        //             // log(row)
-        //             const styles = {
-        //                 position: 'absolute',
-        //                 top: row.day*cellSize,    // computed based on child and parent's height
-        //                 left: row.hour*cellSize,   // computed based on child and parent's width
-        //                 width: cellSize,
-        //                 height: cellSize * (accs==0?1:accs), //В зависимости от числа аакаунтов в день
-        //                 background:'#fff',
-        //                 borderColor: '#111',
-        //                 borderWidth: '1px',
-        //                 borderStyle: 'solid',
-        //                 cursor: 'pointer',
-        //                 shapeRendering: 'crispEdges'
-        //         };
-        //             //Ячейка которую будем искать что бы засунуть данные
-        //             const cellkey = `cell${row.day}-${row.hour}`
-        //             return <div key={cellkey} style={styles}>{`${row.day}:${row.hour}`}</div>
-        //         })
-        //
-        //     }
-        // </div>
+        //----- TODO: вынести в редусер -------
 
         this.prepared_schedules = new Map()
         this.prepared_locks = new Map()
@@ -99,7 +43,7 @@ export default class BarsEditor extends LimitsBaseComponent {
             src.forEach(dt=>{
                 let idx_start = (dt[0]-1)*24 + dt[1]    
                 let idx_stop = (dt[2]-1)*24 + dt[3]    
-                log('start creating',idx_start, idx_stop)    
+                //log('start creating',idx_start, idx_stop)    
                 for (let i = idx_start; i <= idx_stop; i++) {
                     m.set(i,6) //TODO: число столов аккаунта??
                 }
@@ -114,12 +58,14 @@ export default class BarsEditor extends LimitsBaseComponent {
                 prepareMap(this.prepared_templates, acc.templates)
         })
 
+        //----- TODO: вынести в редусер ------- !!!!
 
 
         log('prepared',this.prepared_schedules)
 
         let _days =  [...Array(this.props.days).keys()]
         let _hours =  [...Array(24).keys()]
+        
 
         return <div>
             <div className="barEditorDay" ></div>
@@ -130,36 +76,43 @@ export default class BarsEditor extends LimitsBaseComponent {
                 })
             }
             {
-                _days.map((dd,i1)=>{
-                    return <div className="barEditorDayCell" key={"dat_"+dd}>
+                _days.map((dd,index_day)=>{
+                    return <div className="barEditorDayCell" key={"date_"+dd}>
+                        {/* TODO: предсказание по таргет лимиту аккаунта*/}
                         <div className="barEditorDay" >{dd+1}</div>
                         {
                             _hours.map((hh,i2)=>{
-                                let key = `cell_${dd}_${hh}`
-                                let index = i1*24 + i2
+                                
+                                let key = `cell_${dd}_${hh}` //TODO: поменять на индекс
+                                let index = index_day*24 + i2
+                                this.cellIndexes.set(index,[dd+1,hh])
 
                                 //Бордюр может быть??    
+                                const _selected = this.prepared_schedules.has(index)
+                                const _selected_marker = this.prepared_locks.has(index)
+
+                                
                                 const cellStyles = {}
-                                if(this.prepared_schedules.has(index)){
+                                if(_selected){
                                     cellStyles.background = this.currentColor
                                 }
 
+                                //не всегда отрабатывает selected
                                 const cellClasses = classNames({
                                     'barEditorHourCell': true,
                                     'disabled':false, //markers
-                                    'selected': this.prepared_schedules.has(index)
+                                    'selected': _selected
                                 });
 
                                 return <div draggable="true" 
                                         style={cellStyles}
                                         className={cellClasses}
-                                        ref={el=>this.cellRefs.set(key,el)} 
+                                        ref={el=>this.cellRefs.set(index,el)} 
                                         key={key} 
-                                        onClick={ (event)=>this._onClick(key, event) }
-                                        onDragStart={ (event)=>this._onDragStart(key, event) }
-                                        onDragEnd={ (event)=>this._onDragEnd(key, event) }
-                                        onDragOver={ (event)=>this._onDragOver(key, event)} 
-                                        onDrop={(event)=>this._onDrop(key, event)}
+                                        onClick={ (event)=>this._onClick(index, event) }
+                                        onDragStart={ (event)=>this._onDragStart(index, event) }
+                                        onDragOver={ (event)=>this._onDragOver(index, event)} 
+                                        onDrop={(event)=>this._onDrop(index, event)}
                                     >
                                     {hh}
                                     {/* Сюда инжектить ячейку - у нее свойства - дочерние накидывать их рендерить дивами
@@ -178,23 +131,43 @@ export default class BarsEditor extends LimitsBaseComponent {
 
     //----------------------------------------------------
 
-    setStartCell(key){
-        let indexes = [...this.cellRefs.keys()]
-        this.selected_index = indexes.indexOf(key)
+    setStartCell(index){
+        // let indexes = [...this.cellRefs.keys()]
+        // this.selected_index = indexes.indexOf(key)
+        this.selected_index = index
     }
 
-    setEndCell(key){
-        let indexes = [...this.cellRefs.keys()]
-        let index = indexes.indexOf(key)
+    //FIXME: чистит и уже размеченные стили - должна добавлять !! 
+    setEndCell(index){
+        // let indexes = [...this.cellRefs.keys()]
+        // let index = indexes.indexOf(key)
+        // let min_idx = Math.min(index, this.selected_index)
+        // let max_idx = Math.max(index, this.selected_index)
         let min_idx = Math.min(index, this.selected_index)
         let max_idx = Math.max(index, this.selected_index)
-        log('подсвечиваем ячейки', min_idx,max_idx)
-        indexes.forEach(
-            el => this.cellRefs.get(el).className = "barEditorHourCell"
+
+        //TODO: новая логика - обрабатываем все ячейки 
+        //стандартные селекторы + там где индекс между указанными подсвечиваем
+
+        log('подсвечиваем ячейки', min_idx,max_idx, this.cellRefs)
+        this.cellIndexes.forEach(el => {
+                const _selected_schedule = this.prepared_schedules.has(index)
+                const _selected_marker = this.prepared_locks.has(index)
+
+                const cellClasses = classNames({
+                    'barEditorHourCell': true,
+                    'disabled': _selected_marker, 
+                    'selected': _selected_schedule,
+                    'highlight': index>=min_idx && index<=max_idx+1
+                });
+                log(el)
+                //this.cellRefs.get(+el).className = cellClasses
+            }
         )    
-        indexes.slice(min_idx,max_idx+1).forEach(
-            el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
-        )    
+        // indexes.slice(min_idx,max_idx+1).forEach(
+        //     el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
+        // )    
+        this._prev_h_key = undefined
     }
 
     markFromStartToEndCell(key){
@@ -202,14 +175,20 @@ export default class BarsEditor extends LimitsBaseComponent {
         let index = indexes.indexOf(key)
         let min_idx = Math.min(index, this.selected_index)
         let max_idx = Math.max(index, this.selected_index)
-        log('Выделяем ячейки', min_idx,max_idx)
-        indexes.slice(min_idx,max_idx+1).forEach(
-            el => {
-                //Определяем начало диапазона и конец
-                log('Выделяем', el)
-            }
-            
-        )    
+        //log('Выделяем ячейки', min_idx,max_idx)
+        this.props.schedulerActions.performAction(
+            CMD.ADD_SCHEDULE,
+            {
+                accid:this.props.current_account,
+                start:this.cellIndexes.get(min_idx),
+                stop:this.cellIndexes.get(max_idx)
+            })
+
+        // indexes.slice(min_idx,max_idx+1).forEach(
+        //     el => {
+        //         })
+        //     }
+        // )    
     }
 
 
@@ -223,9 +202,12 @@ export default class BarsEditor extends LimitsBaseComponent {
     _onDragOver(key,event) {
         //log(event.type, key) 
         event.preventDefault()
-        this.setEndCell(key)
-    }
 
+        if(this._prev_h_key != key)
+            this.setEndCell(key)
+
+        this._prev_h_key = key
+    }
     _onDrop(key, event) {
         log(event.type, key) 
         event.preventDefault();
@@ -241,9 +223,7 @@ export default class BarsEditor extends LimitsBaseComponent {
 
 
 
-    _onDragEnd(key, event){
-        log(event.type, key, event) 
-    }
+ 
 
 
     _onClick(key,event) {
@@ -336,57 +316,8 @@ export default class BarsEditor extends LimitsBaseComponent {
         if (!(event.ctrlKey || event.shiftKey)) {
             this.selected_index = 0;                
         }
-
         
-        
-        // let DDs,HHs,DDe,HHe = 0
-        // if(context.pressed){
-        //     //Выделяем диапазон от начала выделения до кончания выделания
-        //     //начало - если день тот де самый - минимум и максимум от дней
-        //     //иначе если меньше
-        //     if(context.select_day < data.day){
-        //         DDs = context.select_day
-        //         DDe = data.day
-        //         HHs = context.select_hour
-        //         HHe = data.hour
-        //     }else if(context.select_day > data.day){
-        //         DDe = context.select_day
-        //         DDs = data.day
-        //         HHe = context.select_hour
-        //         HHs = data.hour
-        //     }else{
-        //         DDs = DDe = data.day
-        //         HHs = Math.min(context.select_hour,data.hour)
-        //         HHe = Math.max(context.select_hour,data.hour)
-        //     }
-        
-        //     log('SELECT:',DDs,HHs,DDe,HHe, min_idx, max_idx)
-        //
-        //     //или просто по индексам??? - взять первый взять последний
-        //     d3.selectAll('.graf').each(function (d,i){
-        //         if(i>=min_idx && i<=max_idx){
-        //             //TODO: пропустить задисабленные
-        //             d.selected = true
-        //             d3.select(this).classed('state--selected', true)  // в обработчике меняем значение переменной и вычисляем класс
-        //         }
-        //     } )
-        //
-        //     //TODO: оповестить редукс о изменении данных (пересчет итогов и отображение меток аккаунтов)
-        //
-        //
-        // }else{
-        //     context.select_day = data.day
-        //     context.select_hour = data.hour
-        //     context.select_index = index
-        //     log('START SELECT:',context.select_day,context.select_hour)
-        // }
-        //
-        //
-        // context.pressed = !context.pressed
     }
-
-
-
 
 
     componentDidMount() {
@@ -403,5 +334,5 @@ BarsEditor.propTypes = {
     schedules: PropTypes.array.isRequired,
     //current_mode: PropTypes.string.isRequired,
     //setMode: PropTypes.func.isRequired
-    //schedulerActions: PropTypes.object.isRequired
+    schedulerActions: PropTypes.object.isRequired
 }

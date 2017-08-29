@@ -25,8 +25,11 @@ $border_blue: #B7DDF2;
         background: none repeat scroll 0 0 #FFFFFF;
     }
 
+    tr {
+      border-top: 1px dashed $border_blue;
+    }
+
     td {
-        border-top: 1px dashed #ddd;
         color: #000000;
         padding: 10px;
     }

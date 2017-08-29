@@ -1,32 +1,17 @@
-// import bar, {bar2} from './bar';
-// import './main.css';
-
-// console.log("App created !!")
-// bar();
-
-// export {bar, bar2}
-
-
-// export function bar3() {
-//     console.log("Bar3 called")
-//     return "OK"
-// }
-
-
-//import 'babel-polyfill'
+//node_modules
 import moment from 'moment'
 import React from 'react'
 import { render } from 'react-dom'
-import Redux, { createStore, bindActionCreators } from 'redux'
+import Redux, { createStore, bindActionCreators, combineReducers } from 'redux'
 import { connect, Provider } from 'react-redux'
 
+//components
 import {log} from './components/LimitsBaseComponent.jsx'
-
 import Scheduler from './components/Scheduler.jsx'
 import SchedulerLimits from './components/SchedulerLimits.jsx'
-
 import * as CMD from './constants/commands'
 
+//css
 import './scss/checkboxes.scss'
 import './scss/base.scss'
 import  './css/main.css';
@@ -55,11 +40,15 @@ const initialState = {
     //     {accid:1000, data:[ /*[DD,HH,LEN]*/ [22,0,6],[24,1,4],[25,4,4],[1,22,8] ], locks:[ [22,1,24,12] ], },
     //     {accid:1002, data:[[22,0,6],[29,1,4],[25,4,4]], locks:[ [22,2,24,3] ],}
     // ],
+    //TODO: это должно быть в редусере
+    //TODO: не разбить ли на отдельные записи?
     schedules: [
         {accid:1000, data:[ [20,0,22,6],[24,1,24,4],[25,22,26,4],[1,22,2,8] ],  templates:[], locks:[ [22,1,24,12] ], },
         {accid:1001, data:[ [1,0,1,6],[29,1,29,4],[25,22,26,4]],  templates:[],locks:[ [22,2,24,3] ],},
         {accid:1002, data:[ [1,0,1,6] ], templates:[ [2,0,2,6] ], locks:[ [22,2,24,3] ],}
     ],
+    //предсказания по таргет лимиту аккаунта?
+    predictions: [ [1,0,10],[1,1,9],[1,3,5] ], 
     //Аккаунт график которого редактируем
     current_account:1000, 
     //Колонка по которой сортируются данные
@@ -72,6 +61,18 @@ const initialState = {
     month: '2017-08-01 00:00:00', 
     state: 'loading' //ready - работаем или показываем прогресс бар
 }
+
+// import page from './page'
+// import user from './user'
+
+// export default combineReducers({
+//   page,
+//   user
+// })
+//predictions 
+//schedules
+//markers
+//schedules
 
 
 function editorStateReducer(state = initialState, action) {
@@ -124,6 +125,26 @@ function editorStateReducer(state = initialState, action) {
         //УБРАТЬ ПОТОМ
         case CMD.ADD_ACCOUNT:
             return { ...state, current_account: 0, accounts: state.accounts.concat(action.payload) }
+
+
+        case CMD.ADD_SCHEDULE: {
+            //asyn api(create schedule)
+            
+            let newstate = state.schedules.slice()
+            newstate.forEach(e=>{
+                if(e.accid===action.payload.accid) {
+                    //log('before',e.data)
+                    let start = action.payload.start
+                    let stop = action.payload.stop
+                    let toadd = [start[0],start[1],stop[0],stop[1]]
+                    //log(toadd)
+                    e.data.push(toadd)
+                    //log('after',e.data)
+                }
+            })
+            return { ...state, schedules:newstate} 
+        }
+
 
         default: //@@redux.INIT
             return state;
