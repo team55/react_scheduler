@@ -61,38 +61,52 @@
 
 }
 
+.barEditorRoot {
+  font-family: Arial,Helvetica,sans-serif;
+  font-size: 12px;
+}
 
 
-
-.barEditorDayCell {
-  text-align: center;
-  font-weight: bold;
-  color: $orange_color;
+.barEditorEmpty {
+  background: #fff;
+  width: 30px;
+  display: table-cell;
+  height: 28px;
 }
 
 .barEditorDay {
-  display: table-cell;
-  min-width: 28px;
+  width: 28px;
 }
 
+.barEditorDay, .barEditorHourHeader, .barEditorTotal, .barEditorTotalHeader {
+  color: #444;
+  font-weight: bold;
+
+  vertical-align: middle;
+  text-align: center;
+
+  background: #f0f0f0;
+  border: 1px solid #fff;
+
+  display: table-cell;
+  height: 28px;
+}
 
 .barEditorHourHeader {
-  color: $orange_color;
-  text-align: center;
-  font-weight: bold;
-  width: 30px;
-  height: 24px;
-  display: table-cell;
+  width: 28px;
 }
 
+.barEditorTotal, .barEditorTotalHeader {
+  width: 54px;
+}
 
 .barEditorHourCell {
-  font-family: Arial,Helvetica,sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: lighter;
-  color: $font_color1;
+  vertical-align: middle;
+  text-align: center;
 
-  /*shapeRendering: 'crispEdges',*/
+  color: $font_color1;
   background: #fafafa;
   cursor: pointer;
   border: 1px solid #fff;

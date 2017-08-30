@@ -34,19 +34,25 @@ export default class BarsEditor extends LimitsBaseComponent {
         let _days =  [...Array(this.props.days).keys()]
         let _hours =  [...Array(24).keys()]
 
-        return <div>
-            <div className="barEditorDay" ></div>
+        return <div className="barEditorRoot">
+            <div className="barEditorEmpty" ></div>
             {
                 _hours.map((hh,i2)=>{
                     let key = `hcell_${hh}`
                     return <div key={key} className="barEditorHourHeader">{hh}</div>
                 })
             }
+            <div className="barEditorTotalHeader">hours</div>
+            <div className="barEditorTotalHeader">tables</div>
+            <div className="barEditorTotalHeader">hands</div>
             {
                 _days.map((dd,index_day)=>{
-                    return <div className="barEditorDayCell" key={"date_"+dd}>
+                    let curr_dd = dd+1    
+                    let ttls = this.props.day_totals.get(curr_dd)
+
+                    return <div key={"date_"+curr_dd}>
                         {/* TODO: предсказание по таргет лимиту аккаунта*/}
-                        <div className="barEditorDay" >{dd+1}</div>
+                        <div className="barEditorDay" >{curr_dd}</div>
                         {
                             _hours.map((hh,i2)=>{
                                 
@@ -80,6 +86,9 @@ export default class BarsEditor extends LimitsBaseComponent {
                                 </div>
                             })
                         }
+                        <div className="barEditorTotal" >{ttls.hours}</div>
+                        <div className="barEditorTotal" >{ttls.tables}</div>
+                        <div className="barEditorTotal" >{ttls.hands}</div>
                     </div>
                 })
             }
@@ -156,6 +165,7 @@ export default class BarsEditor extends LimitsBaseComponent {
 
         this._previous_hover_key = key
     }
+    
     _onDrop(key, event) {
         log(event.type, key) 
         event.preventDefault();
@@ -169,9 +179,7 @@ export default class BarsEditor extends LimitsBaseComponent {
 
         //Проверить нажатые клавиши - если нажат ctrl то только по подсвеченным клеткам пометка    
         this.markFromStartToEndCell(key)
-     }
-
-
+    }
 
     _onClick(key,event) {
         //Двойной клик срабатывает вместе с одинарным - такова особенность дом модели
@@ -198,7 +206,6 @@ export default class BarsEditor extends LimitsBaseComponent {
             this.clickedOnce = true;
         }
     }
-
 
     _onClickTwice(key, event){
         //TODO: Перперед шедулеры должны лежать в редуксе - он должен по ним пробежаться и получить начальную и конечную дату    
@@ -266,20 +273,16 @@ export default class BarsEditor extends LimitsBaseComponent {
         
     }
 
-
-    componentDidMount() {
-        //this.createBarChart()
-    }
-
-    componentDidUpdate() {
-        //this.createBarChart()
-    }
-
 }
 
 BarsEditor.propTypes = {
-    schedules: PropTypes.array.isRequired,
-    //current_mode: PropTypes.string.isRequired,
+    // schedules: PropTypes.array.isRequired,
+    days: PropTypes.number.isRequired,
+    account_schedules: PropTypes.object.isRequired,
+    account_markers: PropTypes.object.isRequired,
+    account_templates: PropTypes.object.isRequired,
+    day_totals: PropTypes.object.isRequired,
+    current_mode: PropTypes.string.isRequired,
     //setMode: PropTypes.func.isRequired
     schedulerActions: PropTypes.object.isRequired
 }

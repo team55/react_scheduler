@@ -37418,6 +37418,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; } //node_modules
 
 
@@ -37474,6 +37476,24 @@ function baseJsonRequest(url, method, body) {
 function editorStateReducer(state, action) {
     (0, _LimitsBaseComponent.log)('calling reducer', state, action);
 
+    function calculateAccountTotals(schedules_map) {
+        var day_totals = new Map();
+        var _days = [].concat(_toConsumableArray(Array(state.days).keys()));
+        _days.map(function (dd, index_day) {
+            day_totals.set(dd + 1, { hours: 0, tables: 0, hands: 0 });
+        });
+        //пересчитывает итоги по расписанию аккаунта
+        //вызывается при получении и редактировании расписания
+        //число часов, число столов, число рук (нужны показатели по лимитам аккаунта)
+        schedules_map.forEach(function (el, key, s) {
+            (0, _LimitsBaseComponent.log)(el, key);
+            var cur = day_totals.get(el.day + 1); //0 based
+            cur.hours++;
+        });
+
+        return day_totals;
+    }
+
     //если в пайлод запихнули параметры то можем их все пробросить в стейт
     //но если надо делать какое то действие то не обойтись без логики (хотя мы же можем и функцию передать которой обработать)
     var prepareMap = function prepareMap(m, src) {
@@ -37482,7 +37502,11 @@ function editorStateReducer(state, action) {
             var idx_stop = (dt[2] - 1) * 24 + dt[3];
             //log('start creating',idx_start, idx_stop)    
             for (var i = idx_start; i <= idx_stop; i++) {
-                m.set(i, state.current_account_tables);
+                m.set(i, {
+                    tables: state.current_account_tables,
+                    day: Math.floor(i / 24)
+                    // hour: i - ((i/24)+1) * 24
+                });
             }
         });
     };
@@ -37514,15 +37538,15 @@ function editorStateReducer(state, action) {
                 prepareMap(account_templates, acc.templates);
             });
 
+            var day_totals = calculateAccountTotals(account_schedules);
+
             return _extends({}, state, {
                 current_account: action.payload,
-                //start_month:start, 
-                //end_month:end, 
-                //days: days, //число дней между датами
                 current_account_color: color,
                 account_schedules: account_schedules,
                 account_markers: account_markers,
-                account_templates: account_templates
+                account_templates: account_templates,
+                day_totals: day_totals
             });
 
         case CMD.MARK_ACCOUNT:
@@ -37570,39 +37594,49 @@ function editorStateReducer(state, action) {
                 // val start: Timestamp = Timestamp(System.currentTimeMillis()),
                 // val stop: Timestamp = Timestamp(System.currentTimeMillis())
 
-                var data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_task', { "account_id": "1000" });
-                data.then(function (json) {
-                    (0, _LimitsBaseComponent.log)('CREATE SCHEDULE on SERVER:', json);
+                // let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_task',{"account_id":"1000"})
+                // data.then(json=>{
+                //     log('CREATE SCHEDULE on SERVER:', json)
 
-                    //Интервалы всех расписаний?? Убрать или нет потом?
-                    var all_schedules = state.schedules.slice();
-                    all_schedules.forEach(function (e) {
-                        if (e.accid === action.payload.accid) {
-                            var start = action.payload.start;
-                            var stop = action.payload.stop;
-                            var toadd = [start[0], start[1], stop[0], stop[1]];
-                            e.schedules.push(toadd);
-                        }
+                //Интервалы всех расписаний?? Убрать или нет потом?
+                var _all_schedules = state.schedules.slice();
+                _all_schedules.forEach(function (e) {
+                    if (e.accid === action.payload.accid) {
+                        var _start = action.payload.start;
+                        var stop = action.payload.stop;
+                        var toadd = [_start[0], _start[1], stop[0], stop[1]];
+                        e.schedules.push(toadd);
+                    }
+                });
+
+                //-------------------------------------------------------
+                //TODO: вынести в отдельную функцию подготовку данных аккаунта
+                //FIXME: публиковать в ощий стор - потом подтягивать данные
+                //Часы конкретного аккаунта - c индекса до индекса
+                var acc_schedules = new Map(state.account_schedules); //state.account_schedules.slice() //ТУТ МАП
+                for (var i = action.payload.start_index; i <= action.payload.stop_index; i++) {
+                    acc_schedules.set(i, {
+                        tables: state.current_account_tables,
+                        day: Math.floor(i / 24)
+                        // hour: i - ((i/24)+1) * 24
                     });
+                }
+
+                var _day_totals = calculateAccountTotals(acc_schedules);
+                return _extends({}, state, {
+                    schedules: _all_schedules,
+                    account_schedules: acc_schedules,
+                    day_totals: _day_totals
 
                     //-------------------------------------------------------
-                    //TODO: вынести в отдельную функцию подготовку данных аккаунта
-                    //FIXME: публиковать в ощий стор - потом подтягивать данные
-                    //Часы конкретного аккаунта - c индекса до индекса
-                    var acc_schedules = new Map(state.account_schedules); //state.account_schedules.slice() //ТУТ МАП
-                    for (var i = action.payload.start_index; i <= action.payload.stop_index; i++) {
-                        acc_schedules.set(i, state.current_account_tables);
-                    }
-
-                    return _extends({}, state, { schedules: all_schedules, account_schedules: acc_schedules
-
-                        //-------------------------------------------------------
 
 
-                    });
-                }).catch(function (error) {
-                    (0, _LimitsBaseComponent.log)('Request failed:', error);
-                    return _extends({}, state);
+                    // }).catch(function (error) {  
+                    //     log('Request failed:', error);  
+                    //     return { ...state} 
+                    // });
+
+
                 });
             }
 
@@ -37613,8 +37647,12 @@ function editorStateReducer(state, action) {
 
         default:
             //@@redux.INIT
-            return state;
-    }
+            var start = _moment2.default.utc(state.month).startOf('month');
+            var end = _moment2.default.utc(state.month).endOf('month');
+            var days = end.diff(start, 'days');
+            return _extends({}, state, { start_month: start, end_month: end, days: days /*число дней между датами*/
+                //return state;
+            });}
 }
 
 //Это может быть объект или функция - в функцию мы по идее можем пробросить команду и параметры - все параметры пихать в пайлод
@@ -37637,10 +37675,11 @@ var ConnectedToStoreScheduler = (0, _reactRedux.connect)(
 //mapStateToProps, 
 function (state) {
     (0, _LimitsBaseComponent.log)('Перед привязкой стейта', state);
-    var start = _moment2.default.utc(state.month).startOf('month');
-    var end = _moment2.default.utc(state.month).endOf('month');
-    var days = end.diff(start, 'days');
-    return _extends({}, state, { start_month: start, end_month: end, days: days /*число дней между датами*/ });
+    // let start = moment.utc(state.month).startOf('month')
+    // let end = moment.utc(state.month).endOf('month')
+    // let days = end.diff(start, 'days')
+    // return {...state, start_month:start, end_month:end, days: days, /*число дней между датами*/}
+    return _extends({}, state);
 },
 //mapDispatchToProps
 function (dispatch) {
@@ -53018,8 +53057,8 @@ var BarsEditor = function (_LimitsBaseComponent) {
 
             return _react2.default.createElement(
                 'div',
-                null,
-                _react2.default.createElement('div', { className: 'barEditorDay' }),
+                { className: 'barEditorRoot' },
+                _react2.default.createElement('div', { className: 'barEditorEmpty' }),
                 _hours.map(function (hh, i2) {
                     var key = 'hcell_' + hh;
                     return _react2.default.createElement(
@@ -53028,14 +53067,32 @@ var BarsEditor = function (_LimitsBaseComponent) {
                         hh
                     );
                 }),
+                _react2.default.createElement(
+                    'div',
+                    { className: 'barEditorTotalHeader' },
+                    'hours'
+                ),
+                _react2.default.createElement(
+                    'div',
+                    { className: 'barEditorTotalHeader' },
+                    'tables'
+                ),
+                _react2.default.createElement(
+                    'div',
+                    { className: 'barEditorTotalHeader' },
+                    'hands'
+                ),
                 _days.map(function (dd, index_day) {
+                    var curr_dd = dd + 1;
+                    var ttls = _this2.props.day_totals.get(curr_dd);
+
                     return _react2.default.createElement(
                         'div',
-                        { className: 'barEditorDayCell', key: "date_" + dd },
+                        { key: "date_" + curr_dd },
                         _react2.default.createElement(
                             'div',
                             { className: 'barEditorDay' },
-                            dd + 1
+                            curr_dd
                         ),
                         _hours.map(function (hh, i2) {
 
@@ -53075,7 +53132,22 @@ var BarsEditor = function (_LimitsBaseComponent) {
                                 },
                                 hh
                             );
-                        })
+                        }),
+                        _react2.default.createElement(
+                            'div',
+                            { className: 'barEditorTotal' },
+                            ttls.hours
+                        ),
+                        _react2.default.createElement(
+                            'div',
+                            { className: 'barEditorTotal' },
+                            ttls.tables
+                        ),
+                        _react2.default.createElement(
+                            'div',
+                            { className: 'barEditorTotal' },
+                            ttls.hands
+                        )
                     );
                 })
             );
@@ -53264,16 +53336,6 @@ var BarsEditor = function (_LimitsBaseComponent) {
                 this.selected_index = 0;
             }
         }
-    }, {
-        key: 'componentDidMount',
-        value: function componentDidMount() {
-            //this.createBarChart()
-        }
-    }, {
-        key: 'componentDidUpdate',
-        value: function componentDidUpdate() {
-            //this.createBarChart()
-        }
     }]);
 
     return BarsEditor;
@@ -53283,8 +53345,13 @@ exports.default = BarsEditor;
 
 
 BarsEditor.propTypes = {
-    schedules: _propTypes2.default.array.isRequired,
-    //current_mode: PropTypes.string.isRequired,
+    // schedules: PropTypes.array.isRequired,
+    days: _propTypes2.default.number.isRequired,
+    account_schedules: _propTypes2.default.object.isRequired,
+    account_markers: _propTypes2.default.object.isRequired,
+    account_templates: _propTypes2.default.object.isRequired,
+    day_totals: _propTypes2.default.object.isRequired,
+    current_mode: _propTypes2.default.string.isRequired,
     //setMode: PropTypes.func.isRequired
     schedulerActions: _propTypes2.default.object.isRequired
 };
@@ -70420,7 +70487,7 @@ exports = module.exports = __webpack_require__(81)(undefined);
 
 
 // module
-exports.push([module.i, ".gantt_info .grid-cell {\n  fill: #fff;\n  stroke: #eee; }\n\n.barEditorDayCell {\n  text-align: center;\n  font-weight: bold;\n  color: #ff8839; }\n\n.barEditorDay {\n  display: table-cell;\n  min-width: 28px; }\n\n.barEditorHourHeader {\n  color: #ff8839;\n  text-align: center;\n  font-weight: bold;\n  width: 30px;\n  height: 24px;\n  display: table-cell; }\n\n.barEditorHourCell {\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  font-weight: lighter;\n  color: #333;\n  /*shapeRendering: 'crispEdges',*/\n  background: #fafafa;\n  cursor: pointer;\n  border: 1px solid #fff;\n  width: 28px;\n  height: 28px;\n  display: table-cell; }\n\n.barEditorHourCell.selected {\n  color: #fff;\n  font-weight: bold; }\n\n@keyframes colorchange {\n  0% {\n    -webkit-text-stroke: 1px red; }\n  50% {\n    -webkit-text-stroke: 1px white; }\n  100% {\n    -webkit-text-stroke: 1px red; } }\n\n.barEditorHourCell.errors {\n  -webkit-text-fill-color: white;\n  animation: colorchange 1s infinite;\n  font-weight: bold !important; }\n\n.barEditorHourCell.template {\n  border: 1px dashed #aaa !important; }\n\n.barEditorHourCell.highlight {\n  background: rgba(255, 202, 68, 0.22);\n  color: #3498db;\n  font-weight: bold; }\n\n.barEditorHourCell.disabled {\n  background: #aaa;\n  color: #09ad7e; }\n", ""]);
+exports.push([module.i, ".gantt_info .grid-cell {\n  fill: #fff;\n  stroke: #eee; }\n\n.barEditorRoot {\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px; }\n\n.barEditorEmpty {\n  background: #fff;\n  width: 30px;\n  display: table-cell;\n  height: 28px; }\n\n.barEditorDay {\n  width: 28px; }\n\n.barEditorDay, .barEditorHourHeader, .barEditorTotal, .barEditorTotalHeader {\n  color: #444;\n  font-weight: bold;\n  vertical-align: middle;\n  text-align: center;\n  background: #f0f0f0;\n  border: 1px solid #fff;\n  display: table-cell;\n  height: 28px; }\n\n.barEditorHourHeader {\n  width: 28px; }\n\n.barEditorTotal, .barEditorTotalHeader {\n  width: 54px; }\n\n.barEditorHourCell {\n  font-size: 11px;\n  font-weight: lighter;\n  vertical-align: middle;\n  text-align: center;\n  color: #333;\n  background: #fafafa;\n  cursor: pointer;\n  border: 1px solid #fff;\n  width: 28px;\n  height: 28px;\n  display: table-cell; }\n\n.barEditorHourCell.selected {\n  color: #fff;\n  font-weight: bold; }\n\n@keyframes colorchange {\n  0% {\n    -webkit-text-stroke: 1px red; }\n  50% {\n    -webkit-text-stroke: 1px white; }\n  100% {\n    -webkit-text-stroke: 1px red; } }\n\n.barEditorHourCell.errors {\n  -webkit-text-fill-color: white;\n  animation: colorchange 1s infinite;\n  font-weight: bold !important; }\n\n.barEditorHourCell.template {\n  border: 1px dashed #aaa !important; }\n\n.barEditorHourCell.highlight {\n  background: rgba(255, 202, 68, 0.22);\n  color: #3498db;\n  font-weight: bold; }\n\n.barEditorHourCell.disabled {\n  background: #aaa;\n  color: #09ad7e; }\n", ""]);
 
 // exports
 
@@ -70907,7 +70974,7 @@ exports = module.exports = __webpack_require__(81)(undefined);
 
 
 // module
-exports.push([module.i, "@charset \"UTF-8\";\n#accounts-table {\n  border-collapse: collapse;\n  border-color: #B7DDF2;\n  border-style: solid;\n  border-width: 1px;\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  margin-top: 5px;\n  text-align: left;\n  width: 100%; }\n  #accounts-table th {\n    font-size: 11px;\n    font-weight: bold;\n    padding: 15px 10px 10px; }\n  #accounts-table tbody tr td {\n    background: none repeat scroll 0 0 #FFFFFF; }\n  #accounts-table tr {\n    border-top: 1px dashed #B7DDF2; }\n  #accounts-table td {\n    color: #000000;\n    padding: 10px; }\n  #accounts-table tbody tr:hover td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n  #accounts-table tbody tr.current td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n\n/* .table > thead > tr > th, \r\n.table > tbody > tr > th, \r\n.table > tfoot > tr > th, \r\n.table > thead > tr > td, \r\n.table > tbody > tr > td, \r\n.table > tfoot > tr > td, \r\n.table > thead > tr > th, \r\n.table-bordered  */\n.accounts_table,\n.accounts_table > thead > tr > th,\n.accounts_table > tbody > tr > td {\n  border: 1px solid #ebeff2;\n  border-collapse: collapse !important;\n  border-spacing: 0 !important; }\n\n.accounts_table {\n  width: 100%; }\n\n.accounts_table > tbody > tr:hover {\n  background: #9f7e19 !important; }\n\n.accounts_table > tbody > tr.current {\n  border: 2px solid #000;\n  background: rgba(255, 68, 68, 0.36) !important; }\n\n/*tr:nth-child(even) {background: #CCC}*/\n/*tr:nth-child(odd) {background: #FFF}*/\ntd:first-child {\n  padding-top: 5px;\n  padding-bottom: 1px;\n  text-align: center;\n  vertical-align: middle;\n  /* пробовал top, bottom, baseline. Не помогает */ }\n\n.accounts_table > thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #ebeff2; }\n", ""]);
+exports.push([module.i, "@charset \"UTF-8\";\n#accounts-table {\n  border-collapse: collapse;\n  border-color: #B7DDF2;\n  border-style: solid;\n  border-width: 1px;\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  margin-top: 5px;\n  text-align: left;\n  width: 100%; }\n  #accounts-table th {\n    font-size: 11px;\n    font-weight: bold;\n    padding: 15px 10px 10px; }\n  #accounts-table tbody tr td {\n    background: none repeat scroll 0 0 #FFFFFF; }\n  #accounts-table tr {\n    border-top: 1px dashed #B7DDF2; }\n  #accounts-table td {\n    color: #000000;\n    padding: 10px; }\n  #accounts-table tbody tr:hover td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n  #accounts-table tbody tr.current td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n\n/* .table > thead > tr > th, \n.table > tbody > tr > th, \n.table > tfoot > tr > th, \n.table > thead > tr > td, \n.table > tbody > tr > td, \n.table > tfoot > tr > td, \n.table > thead > tr > th, \n.table-bordered  */\n.accounts_table,\n.accounts_table > thead > tr > th,\n.accounts_table > tbody > tr > td {\n  border: 1px solid #ebeff2;\n  border-collapse: collapse !important;\n  border-spacing: 0 !important; }\n\n.accounts_table {\n  width: 100%; }\n\n.accounts_table > tbody > tr:hover {\n  background: #9f7e19 !important; }\n\n.accounts_table > tbody > tr.current {\n  border: 2px solid #000;\n  background: rgba(255, 68, 68, 0.36) !important; }\n\n/*tr:nth-child(even) {background: #CCC}*/\n/*tr:nth-child(odd) {background: #FFF}*/\ntd:first-child {\n  padding-top: 5px;\n  padding-bottom: 1px;\n  text-align: center;\n  vertical-align: middle;\n  /* пробовал top, bottom, baseline. Не помогает */ }\n\n.accounts_table > thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #ebeff2; }\n", ""]);
 
 // exports
 

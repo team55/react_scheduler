@@ -89,6 +89,26 @@ async function getJsonRequest(url) {
 function editorStateReducer(state, action) {
     log('calling reducer', state, action)
 
+
+    function calculateAccountTotals(schedules_map){
+        let day_totals = new Map()
+        let _days =  [...Array(state.days).keys()]
+        _days.map((dd,index_day)=>{
+            day_totals.set(dd+1,{hours:0, tables:0, hands:0})
+        })
+        //пересчитывает итоги по расписанию аккаунта
+        //вызывается при получении и редактировании расписания
+        //число часов, число столов, число рук (нужны показатели по лимитам аккаунта)
+        schedules_map.forEach( (el,key,s)=> {
+            log(el,key)
+            let cur = day_totals.get(el.day+1) //0 based
+            cur.hours++
+        } )
+
+
+        return day_totals
+    }
+
     //если в пайлод запихнули параметры то можем их все пробросить в стейт
     //но если надо делать какое то действие то не обойтись без логики (хотя мы же можем и функцию передать которой обработать)
     let prepareMap = function(m,src){
@@ -97,7 +117,11 @@ function editorStateReducer(state, action) {
             let idx_stop = (dt[2]-1)*24 + dt[3]    
             //log('start creating',idx_start, idx_stop)    
             for (let i = idx_start; i <= idx_stop; i++) {
-                m.set(i,state.current_account_tables) 
+                m.set(i, {
+                    tables:state.current_account_tables,
+                    day: Math.floor( (i/24) ),
+                    // hour: i - ((i/24)+1) * 24
+                } ) 
             }
         })
     }
@@ -129,15 +153,15 @@ function editorStateReducer(state, action) {
                     prepareMap(account_templates, acc.templates)
             })
 
+            let day_totals = calculateAccountTotals(account_schedules)
+
             return {...state, 
                 current_account: action.payload,
-                //start_month:start, 
-                //end_month:end, 
-                //days: days, //число дней между датами
                 current_account_color: color, 
                 account_schedules:account_schedules,
                 account_markers:account_markers,
-                account_templates:account_templates
+                account_templates:account_templates,
+                day_totals:day_totals
             }
             
 
@@ -183,9 +207,9 @@ function editorStateReducer(state, action) {
         	// val start: Timestamp = Timestamp(System.currentTimeMillis()),
 	        // val stop: Timestamp = Timestamp(System.currentTimeMillis())
 
-            let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_task',{"account_id":"1000"})
-            data.then(json=>{
-                log('CREATE SCHEDULE on SERVER:', json)
+            // let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_task',{"account_id":"1000"})
+            // data.then(json=>{
+            //     log('CREATE SCHEDULE on SERVER:', json)
 
                 //Интервалы всех расписаний?? Убрать или нет потом?
                 let all_schedules = state.schedules.slice()
@@ -204,18 +228,26 @@ function editorStateReducer(state, action) {
                 //Часы конкретного аккаунта - c индекса до индекса
                 let acc_schedules = new Map(state.account_schedules) //state.account_schedules.slice() //ТУТ МАП
                 for (let i = action.payload.start_index; i <= action.payload.stop_index; i++) {
-                    acc_schedules.set(i, state.current_account_tables) 
+                    acc_schedules.set(i, {
+                        tables:state.current_account_tables,
+                        day: Math.floor( (i/24) ),
+                    // hour: i - ((i/24)+1) * 24
+                }) 
                 }
 
-                return { ...state, schedules:all_schedules, account_schedules:acc_schedules} 
+                let day_totals = calculateAccountTotals(acc_schedules)
+                return { ...state, 
+                    schedules:all_schedules, 
+                    account_schedules:acc_schedules,
+                    day_totals:day_totals} 
 
             //-------------------------------------------------------
 
                 
-            }).catch(function (error) {  
-                log('Request failed:', error);  
-                return { ...state} 
-            });
+            // }).catch(function (error) {  
+            //     log('Request failed:', error);  
+            //     return { ...state} 
+            // });
 
 
         }
@@ -227,7 +259,11 @@ function editorStateReducer(state, action) {
 
 
         default: //@@redux.INIT
-            return state;
+            let start = moment.utc(state.month).startOf('month')
+            let end = moment.utc(state.month).endOf('month')
+            let days = end.diff(start, 'days')
+            return {...state, start_month:start, end_month:end, days: days, /*число дней между датами*/}
+            //return state;
     }
 
 }
@@ -252,10 +288,11 @@ const ConnectedToStoreScheduler = connect(
     //mapStateToProps, 
     (state)=>{
         log('Перед привязкой стейта',state)
-        let start = moment.utc(state.month).startOf('month')
-        let end = moment.utc(state.month).endOf('month')
-        let days = end.diff(start, 'days')
-        return {...state, start_month:start, end_month:end, days: days, /*число дней между датами*/}
+        // let start = moment.utc(state.month).startOf('month')
+        // let end = moment.utc(state.month).endOf('month')
+        // let days = end.diff(start, 'days')
+        // return {...state, start_month:start, end_month:end, days: days, /*число дней между датами*/}
+        return {...state}
     }, 
     //mapDispatchToProps
     (dispatch)=>{return {schedulerActions:bindActionCreators(actionCreator, dispatch)}} 
