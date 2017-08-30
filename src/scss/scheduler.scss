@@ -114,7 +114,7 @@
   font-weight: bold;
 }
 
-@-webkit-keyframes colorchange {
+@keyframes colorchange {
 	0% {
 		-webkit-text-stroke: 1px red;
 	}
@@ -130,7 +130,7 @@
   //color: #f00 !important;
   -webkit-text-fill-color: white;
   // -webkit-text-stroke: 1px red;
-  -webkit-animation: colorchange 1s infinite;
+  animation: colorchange 1s infinite;
   // text-shadow:
   // 3px 3px 0 #000,
   // -2px -2px 0 #fff,  
