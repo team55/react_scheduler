@@ -7,7 +7,6 @@ import * as CMD from '../constants/commands'
 import LimitsBaseComponent, {log} from '../components/LimitsBaseComponent.jsx'
 
 
-
 export default class SchedulerLimits extends LimitsBaseComponent {
     
     constructor(props){

@@ -19,8 +19,7 @@ https://github.com/kentcdodds/repeat-todo
 #Асинхронность
 https://blog.patricktriest.com/what-is-async-await-why-should-you-care/
 https://css-tricks.com/using-es2017-async-functions/
-https://hackernoon.com/javascript-es8-introducing-async-await-functions-7a471ec7de8a
-https://davidwalsh.name/async-await
+
 
 
 

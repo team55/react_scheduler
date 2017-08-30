@@ -10,6 +10,7 @@ import {log} from './components/LimitsBaseComponent.jsx'
 import Scheduler from './components/Scheduler.jsx'
 import SchedulerLimits from './components/SchedulerLimits.jsx'
 import * as CMD from './constants/commands'
+import {initialState} from './constants/props'
 
 //css
 import './scss/checkboxes.scss'
@@ -17,51 +18,6 @@ import './scss/base.scss'
 import  './css/main.css';
 
 
-const initialState = {
-    
-    //Заголовки грида (зашить в коде?)
-    limits: [
-        {pn: 'IP',  gts: [ {gt:'NL', bbs:['C100','C200','C400'] }, {gt:'FL', bbs:['C400','C100'] }, {gt:'NLR',  bbs:['C100']  } ] },
-        {pn: 'AC',  gts: [ {gt:'NL',bbs:['C100']}, {gt:'MTT',bbs:['C100','C200','C400']}, {gt:'SNG',bbs:['C400']} ] }
-    ],
-    //Предсказания по лимитам (засунуть в дерево или держать в отдельной коллекции)
-    //Хешмап ключ = PN_GT_BB_DD_HH
-    //Доступные аккаунты по лимиту (как сбрасывать куррент - обходом списка?)
-    //Цвет присваивается на момент включения и остается за аккаунтом (может быть в расписании)
-    //TODO: поведение когда подгрузился аккаунт по фильтру - например убрали лимиты
-    accounts: [
-        {accid:1000, name:'acc1', comp_name:'comp1', selected:false, color:'', limits:[]},
-        {accid:1001, name:'acc2', comp_name:'comp1', selected:false, color:'', limits:[]}, //по этому нет данных
-        {accid:1002, name:'acc3', comp_name:'comp2', selected:true,  color:'', limits:[]}]
-    ,
-    //вот тут вопрос - засунуть это в аккаунт или хранить отдельно
-    // schedules: [
-    //     //А не переделать ли на период start-stop как и отдаем 1с
-    //     {accid:1000, data:[ /*[DD,HH,LEN]*/ [22,0,6],[24,1,4],[25,4,4],[1,22,8] ], locks:[ [22,1,24,12] ], },
-    //     {accid:1002, data:[[22,0,6],[29,1,4],[25,4,4]], locks:[ [22,2,24,3] ],}
-    // ],
-    //TODO: это должно быть в редусере
-    //TODO: не разбить ли на отдельные записи?
-    schedules: [
-        {accid:1000, schedules:[ [20,0,22,6],[24,1,24,4],[25,22,26,4],[1,22,2,8] ],  templates:[], markers:[ [22,1,24,12] ], },
-        {accid:1001, schedules:[ [1,0,1,6],[29,1,29,4],[25,22,26,4]],  templates:[],markers:[ [22,2,24,3] ],},
-        {accid:1002, schedules:[ [1,0,1,6], [2,0,2,6] ], templates:[ [2,0,2,6] ], markers:[ [22,2,24,3] ],}
-    ],
-    //предсказания по таргет лимиту аккаунта?
-    predictions: [ [1,0,10],[1,1,9],[1,3,5] ], 
-    //Аккаунт график которого редактируем
-    current_account:1000, 
-    current_account_tables:0,
-    //Колонка по которой сортируются данные
-    sort_account: '',
-    account_sort_order: '',
-    //поле поиска аккаунта
-    search_account:'',
-    //MODES: edit, view
-    current_mode: 'view', 
-    month: '2017-08-01 00:00:00', 
-    state: 'loading' //ready - работаем или показываем прогресс бар
-}
 
 // import page from './page'
 // import user from './user'
@@ -74,6 +30,59 @@ const initialState = {
 //schedules
 //markers
 //schedules
+
+
+
+function baseJsonRequest(url,method,body) {
+    //Сделать контроллер запроса ?
+    //Поддержка кроссдомена, редирект как ошибка
+
+    //fetch('users.json').then(function(response) {  
+    //     console.log(response.headers.get('Content-Type'));  
+    //     console.log(response.headers.get('Date'));
+    //     console.log(response.status);  
+    //     console.log(response.statusText);  
+    //     console.log(response.type);  
+    //     console.log(response.url);  
+    // });
+
+    return fetch(url, {  
+     method: method,  
+//     headers: {  
+//       "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"  
+//     },  
+     mode: 'no-cors',
+     body: body  
+   })
+   //ОБРАБОТКА ОШИБОК??
+//   .then(json)  
+//   .then(function (data) {  
+//     console.log('Request succeeded with JSON response', data);  
+//   })  
+//   .catch(function (error) {  
+//     console.log('Request failed', error);  
+//   });
+}
+
+async function postJsonRequest(url, body) {
+    let response = await baseJsonRequest(url,'post',JSON.stringify(body))
+    let json = await response.json()
+    return json
+}
+
+async function putJsonRequest(url) {
+    let response = await baseJsonRequest(url,'put',JSON.stringify(body))
+    let json = await response.json()
+    return json
+}
+
+async function getJsonRequest(url) {
+    let response = await fetch(url)
+    let json = await response.json()
+    return json
+}
+
+
 
 //FIXME: в стейт передается старый стейт - потом он маппится в проперти
 //Преобразовывать данные нужно при начальном заполнении???
@@ -133,7 +142,6 @@ function editorStateReducer(state, action) {
             
 
         case CMD.MARK_ACCOUNT:{
-            
             let newstate = state.accounts.slice() //именно копия иначе будет ссылка на тот же массив   
             newstate.forEach(e=>{
                 if(e.accid==action.payload) e.selected = !e.selected 
@@ -141,8 +149,7 @@ function editorStateReducer(state, action) {
             return { ...state, accounts:newstate} 
         }
 
-        case CMD.SEARCH_ACCOUNT:
-            return { ...state, search_account: action.payload }
+        case CMD.SEARCH_ACCOUNT: return { ...state, search_account: action.payload }
 
         case CMD.SORT_ACCOUNTS:{
 
@@ -172,28 +179,50 @@ function editorStateReducer(state, action) {
 
         case CMD.ADD_SCHEDULE: {
             
-            //asyn api(create schedule)
+            // val account_id: String = "",
+        	// val start: Timestamp = Timestamp(System.currentTimeMillis()),
+	        // val stop: Timestamp = Timestamp(System.currentTimeMillis())
 
-            //Интервалы всех расписаний?? Убрать или нет потом?
-            let all_schedules = state.schedules.slice()
-            all_schedules.forEach(e=>{
-                 if(e.accid===action.payload.accid) {
-                     let start = action.payload.start
-                     let stop = action.payload.stop
-                     let toadd = [start[0],start[1],stop[0],stop[1]]
-                     e.schedules.push(toadd)
-                 }
-            })
+            let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_task',{"account_id":"1000"})
+            data.then(json=>{
+                log('CREATE SCHEDULE on SERVER:', json)
+
+                //Интервалы всех расписаний?? Убрать или нет потом?
+                let all_schedules = state.schedules.slice()
+                all_schedules.forEach(e=>{
+                    if(e.accid===action.payload.accid) {
+                        let start = action.payload.start
+                        let stop = action.payload.stop
+                        let toadd = [start[0],start[1],stop[0],stop[1]]
+                        e.schedules.push(toadd)
+                    }
+                })
+
+                //-------------------------------------------------------
+                //TODO: вынести в отдельную функцию подготовку данных аккаунта
+                //FIXME: публиковать в ощий стор - потом подтягивать данные
+                //Часы конкретного аккаунта - c индекса до индекса
+                let acc_schedules = new Map(state.account_schedules) //state.account_schedules.slice() //ТУТ МАП
+                for (let i = action.payload.start_index; i <= action.payload.stop_index; i++) {
+                    acc_schedules.set(i, state.current_account_tables) 
+                }
+
+                return { ...state, schedules:all_schedules, account_schedules:acc_schedules} 
+
+            //-------------------------------------------------------
+
+                
+            }).catch(function (error) {  
+                log('Request failed:', error);  
+                return { ...state} 
+            });
 
 
-            //Часы конкретного аккаунта - c индекса до индекса
-            let acc_schedules = new Map(state.account_schedules) //state.account_schedules.slice() //ТУТ МАП
-            for (let i = action.payload.start_index; i <= action.payload.stop_index; i++) {
-                acc_schedules.set(i, state.current_account_tables) 
-            }
+        }
 
-            return { ...state, schedules:all_schedules, account_schedules:acc_schedules} 
 
+        case CMD.DELETE_SCHEDULE: {
+            return { ...state} 
         }
 
 
@@ -219,12 +248,8 @@ const actionCreator = {
     //создать расписание - передаем выбранные аккаунты - 
 }
 
-//Точка входа для компонента Scheduler которая установит props ИМЯ должно быть с большой буквы!!!
-// const Connect = ReactRedux.connect(mapStateToProps, mapDispatchToProps)(Scheduler)
-
-//функции заменил на лямбды
 const ConnectedToStoreScheduler = connect(
-    //mapStateToProps, если понадобится другая логика вынести в функцию
+    //mapStateToProps, 
     (state)=>{
         log('Перед привязкой стейта',state)
         let start = moment.utc(state.month).startOf('month')
@@ -246,7 +271,6 @@ window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
 //     </ReactRedux.Provider>, 
 //     document.getElementById('scheduler_root')
 // )
-
 
 // render(
 //   <Scheduler />,

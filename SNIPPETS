@@ -1,0 +1,80 @@
+
+// Function declared as async so await can be used
+async function fetchContent() {
+  // Instead of using fetch().then, use await
+  let content = await fetch('/');
+  let text = await content.text();
+  
+  // Inside the async function text is the request body
+  console.log(text);
+
+  // Resolve this async function with the text
+  return text;
+}
+
+// Use the async function
+//var promise = fetchContent().then(...);
+
+async function getJson() {
+  try {
+    let response = await fetch('/users.json');
+    let json = await response.json();
+    console.log(json);
+  }
+  catch(e) {
+    console.log('Error!', e);
+  }
+}
+
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function series() {
+  await sleep(500);
+  await sleep(500);
+  return "done1!";
+}
+
+async function parallel() {
+  const wait1 = sleep(500);
+  const wait2 = sleep(500);
+  await wait1;
+  await wait2;
+  return "done2!";
+}
+
+            series().then(e=>{
+                log(e)
+            })
+
+            parallel().then(e=>{
+                log(e)
+            })
+
+
+
+
+async function asyncAwaitLoopsParallel () {
+  const api = new Api()
+  const user = await api.getUser()
+  const friends = await api.getFriends(user.id)
+  const friendPromises = friends.map(friend => api.getFriends(friend.id))
+  const moreFriends = await Promise.all(friendPromises)
+  console.log('asyncAwaitLoopsParallel', moreFriends)
+}
+
+
+
+
+var controller = new FetchController();
+var signal = controller.signal;
+
+downloadBtn.addEventListener('click', function() {
+  fetch(url, {signal}).then( ... ) // do something with the response
+});
+
+cancelBtn.addEventListener('click', function() {
+  controller.abort();
+});
