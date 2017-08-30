@@ -1,2 +1,2 @@
-export const cellSize = 28
+export const cellSize = 26
 

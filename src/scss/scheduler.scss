@@ -87,6 +87,8 @@
 
 
 .barEditorHourCell {
+  font-family: Arial,Helvetica,sans-serif;
+  font-size: 12px;
   font-weight: lighter;
   color: $font_color1;
 
@@ -112,13 +114,45 @@
   font-weight: bold;
 }
 
-.barEditorHourCell.higlight {
+@-webkit-keyframes colorchange {
+	0% {
+		-webkit-text-stroke: 1px red;
+	}
+	50% {
+		-webkit-text-stroke: 1px white;
+	}
+	100% {
+		-webkit-text-stroke: 1px red;
+	}
+}
+
+.barEditorHourCell.errors {
+  //color: #f00 !important;
+  -webkit-text-fill-color: white;
+  // -webkit-text-stroke: 1px red;
+  -webkit-animation: colorchange 1s infinite;
+  // text-shadow:
+  // 3px 3px 0 #000,
+  // -2px -2px 0 #fff,  
+  //  2px -2px 0 #fff,
+  //  -2px 2px 0 #fff,
+  //   2px 2px 0 #fff;
+  // background: #fff !important;
+  font-weight: bold !important;
+}
+
+.barEditorHourCell.template {
+  border: 1px dashed #aaa !important;
+
+}
+
+.barEditorHourCell.highlight {
   background: rgba(255, 202, 68, 0.22);
   color: $blue_color;
   font-weight: bold;
 }
 
 .barEditorHourCell.disabled {
-  background: rgba(255, 202, 68, 0.22);
+  background: #aaa;
   color: $green_color;
 }

@@ -28168,7 +28168,7 @@ SchedulerLimits.propTypes = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var cellSize = exports.cellSize = 28;
+var cellSize = exports.cellSize = 26;
 
 /***/ }),
 /* 232 */
@@ -28233,7 +28233,7 @@ var cellSize = exports.cellSize = 28;
 
 window.getColor = function () {
 
-    var palette = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#009688', '#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B', '#2196F3', '#00BCD4', '#6D4C41', '#757575', '#546E7A', '#E53935', '#D81B60', '#8E24AA', '#5E35B1', '#3949AB', '#1E88E5', '#039BE5', '#00ACC1', '#00897B', '#43A047', '#7CB342', '#FFB300', '#FB8C00', '#F4511E', '#D32F2F', '#C2185B', '#7B1FA2', '#512DA8', '#303F9F', '#1976D2', '#0288D1', '#0097A7', '#00796B', '#388E3C', '#689F38', '#FFA000', '#F57C00', '#E64A19', '#B71C1C', '#880E4F', '#4A148C', '#311B92', '#1A237E', '#0D47A1', '#01579B', '#006064', '#004D40', '#1B5E20', '#33691E', '#827717', '#F57F17', '#FF6F00', '#FF1744', '#F50057', '#D500F9', '#651FFF', '#3D5AFE', '#2979FF', '#00B0FF', '#00E5FF', '#1DE9B6', '#00E676', '#76FF03', '#FF9100', '#FF3D00', '#5D4037', '#616161', '#455A64', '#E65100', '#BF360C', '#3E2723', '#212121', '#263238', '#D50000', '#C51162', '#AA00FF', '#6200EA', '#304FFE', '#2962FF', '#0091EA', '#00B8D4', '#00BFA5', '#00C853', '#64DD17', '#AEEA00', '#FFAB00', '#DD2C00'];
+    var palette = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#009688', '#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B', '#2196F3', '#00BCD4', '#6D4C41', '#757575', '#546E7A', '#E53935', '#D81B60', '#8E24AA', '#5E35B1', '#3949AB', '#1E88E5', '#039BE5', '#00ACC1', '#00897B', '#43A047', '#7CB342', '#FFB300', '#FB8C00', '#F4511E', '#D32F2F', '#C2185B', '#7B1FA2', '#512DA8', '#303F9F', '#1976D2', '#0288D1', '#0097A7', '#00796B', '#388E3C', '#689F38', '#FFA000', '#F57C00', '#E64A19', '#B71C1C', '#880E4F', '#4A148C', '#311B92', '#1A237E', '#0D47A1', '#01579B', '#006064', '#004D40', '#1B5E20', '#33691E', '#827717', '#F57F17', '#FF6F00', '#FF1744', '#F50057', '#D500F9', '#651FFF', '#3D5AFE', '#2979FF', '#00B0FF', '#00E5FF', '#1DE9B6', '#00E676', '#76FF03', '#FF9100', '#FF3D00', '#5D4037', '#616161', '#455A64', '#E65100', '#BF360C', '#3E2723', '#212121', '#263238', '#D50000', '#C51162', '#AA00FF', '#6200EA', '#304FFE', '#2962FF', '#0091EA', '#00B8D4', '#00BFA5', '#00C853', '#64DD17', '#F44336', '#AEEA00', '#FFAB00', '#DD2C00'];
 
     var current_color_index = 0,
         colors_for_keys = [];
@@ -28326,11 +28326,12 @@ var initialState = {
     // ],
     //TODO: это должно быть в редусере
     //TODO: не разбить ли на отдельные записи?
-    schedules: [{ accid: 1000, data: [[20, 0, 22, 6], [24, 1, 24, 4], [25, 22, 26, 4], [1, 22, 2, 8]], templates: [], locks: [[22, 1, 24, 12]] }, { accid: 1001, data: [[1, 0, 1, 6], [29, 1, 29, 4], [25, 22, 26, 4]], templates: [], locks: [[22, 2, 24, 3]] }, { accid: 1002, data: [[1, 0, 1, 6]], templates: [[2, 0, 2, 6]], locks: [[22, 2, 24, 3]] }],
+    schedules: [{ accid: 1000, schedules: [[20, 0, 22, 6], [24, 1, 24, 4], [25, 22, 26, 4], [1, 22, 2, 8]], templates: [], markers: [[22, 1, 24, 12]] }, { accid: 1001, schedules: [[1, 0, 1, 6], [29, 1, 29, 4], [25, 22, 26, 4]], templates: [], markers: [[22, 2, 24, 3]] }, { accid: 1002, schedules: [[1, 0, 1, 6], [2, 0, 2, 6]], templates: [[2, 0, 2, 6]], markers: [[22, 2, 24, 3]] }],
     //предсказания по таргет лимиту аккаунта?
     predictions: [[1, 0, 10], [1, 1, 9], [1, 3, 5]],
     //Аккаунт график которого редактируем
     current_account: 1000,
+    current_account_tables: 0,
     //Колонка по которой сортируются данные
     sort_account: '',
     account_sort_order: '',
@@ -28354,15 +28355,23 @@ var initialState = {
     //markers
     //schedules
 
-
-};function editorStateReducer() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
-    var action = arguments[1];
-
+    //FIXME: в стейт передается старый стейт - потом он маппится в проперти
+    //Преобразовывать данные нужно при начальном заполнении???
+};function editorStateReducer(state, action) {
     (0, _LimitsBaseComponent.log)('calling reducer', state, action);
 
     //если в пайлод запихнули параметры то можем их все пробросить в стейт
     //но если надо делать какое то действие то не обойтись без логики (хотя мы же можем и функцию передать которой обработать)
+    var prepareMap = function prepareMap(m, src) {
+        src.forEach(function (dt) {
+            var idx_start = (dt[0] - 1) * 24 + dt[1];
+            var idx_stop = (dt[2] - 1) * 24 + dt[3];
+            //log('start creating',idx_start, idx_stop)    
+            for (var i = idx_start; i <= idx_stop; i++) {
+                m.set(i, state.current_account_tables);
+            }
+        });
+    };
 
     switch (action.type) {
 
@@ -28370,7 +28379,37 @@ var initialState = {
             return _extends({}, state, { current_mode: state.current_mode === 'edit' ? 'view' : 'edit' });
 
         case CMD.SET_ACCOUNT:
-            return _extends({}, state, { current_account: action.payload });
+
+            //ЧИТАЕМ С БАЗЫ ДАННЫХ
+            //МАПИМ В КОЛЛЕКЦИИ часов
+
+
+            //Подготовка расписания по аккаунту
+            var account_schedules = new Map();
+            var account_markers = new Map();
+            var account_templates = new Map();
+            var all_schedules = new Map();
+
+            var color = getColor(action.payload);
+
+            state.schedules.filter(function (s) {
+                return s.accid === action.payload;
+            }).forEach(function (acc) {
+                prepareMap(account_schedules, acc.schedules);
+                prepareMap(account_markers, acc.markers);
+                prepareMap(account_templates, acc.templates);
+            });
+
+            return _extends({}, state, {
+                current_account: action.payload,
+                //start_month:start, 
+                //end_month:end, 
+                //days: days, //число дней между датами
+                current_account_color: color,
+                account_schedules: account_schedules,
+                account_markers: account_markers,
+                account_templates: account_templates
+            });
 
         case CMD.MARK_ACCOUNT:
             {
@@ -28413,21 +28452,27 @@ var initialState = {
 
         case CMD.ADD_SCHEDULE:
             {
+
                 //asyn api(create schedule)
 
-                var _newstate = state.schedules.slice();
-                _newstate.forEach(function (e) {
+                //Интервалы всех расписаний?? Убрать или нет потом?
+                var _all_schedules = state.schedules.slice();
+                _all_schedules.forEach(function (e) {
                     if (e.accid === action.payload.accid) {
-                        //log('before',e.data)
                         var start = action.payload.start;
                         var stop = action.payload.stop;
                         var toadd = [start[0], start[1], stop[0], stop[1]];
-                        //log(toadd)
-                        e.data.push(toadd);
-                        //log('after',e.data)
+                        e.schedules.push(toadd);
                     }
                 });
-                return _extends({}, state, { schedules: _newstate });
+
+                //Часы конкретного аккаунта - c индекса до индекса
+                var acc_schedules = new Map(state.account_schedules); //state.account_schedules.slice() //ТУТ МАП
+                for (var i = action.payload.start_index; i <= action.payload.stop_index; i++) {
+                    acc_schedules.set(i, state.current_account_tables);
+                }
+
+                return _extends({}, state, { schedules: _all_schedules, account_schedules: acc_schedules });
             }
 
         default:
@@ -28448,20 +28493,6 @@ var actionCreator = {
         };
     }
 
-    // setMode: function(mode) {
-    //     log('called set mode:',mode)
-    //     return {
-    //         type: CMD.SET_MODE,
-    //         payload: mode
-    //     }
-    // },
-    // setCurrentAccount: function(accid) {
-    //     return {
-    //         type: SET_ACCOUNT,
-    //         payload: accid
-    //     }
-    // },
-
     //Включить признак в расписании
     //создать расписание - передаем выбранные аккаунты - 
 
@@ -28473,11 +28504,11 @@ var actionCreator = {
 };var ConnectedToStoreScheduler = (0, _reactRedux.connect)(
 //mapStateToProps, если понадобится другая логика вынести в функцию
 function (state) {
+    (0, _LimitsBaseComponent.log)('Перед привязкой стейта', state);
     var start = _moment2.default.utc(state.month).startOf('month');
     var end = _moment2.default.utc(state.month).endOf('month');
     var days = end.diff(start, 'days');
-
-    return _extends({}, state, { start_month: start, end_month: end, days: days });
+    return _extends({}, state, { start_month: start, end_month: end, days: days /*число дней между датами*/ });
 },
 //mapDispatchToProps
 function (dispatch) {
@@ -43834,8 +43865,10 @@ var BarsEditor = function (_LimitsBaseComponent) {
 
         _this._onClick = _this._onClick.bind(_this);
         _this._onDragStart = _this._onDragStart.bind(_this);
+        _this._onDragOver = _this._onDragOver.bind(_this);
         _this._onDrop = _this._onDrop.bind(_this);
         _this.markFromStartToEndCell = _this.markFromStartToEndCell.bind(_this);
+        _this.getCellStyle = _this.getCellStyle.bind(_this);
 
         _this.size = [_props.cellSize * 24 + 64, _props.cellSize * props.days + 64]; //??? вроде не нужно уже 
         _this.cellRefs = new Map(); //??? вроде не нужно уже 
@@ -43848,39 +43881,6 @@ var BarsEditor = function (_LimitsBaseComponent) {
         key: 'render',
         value: function render() {
             var _this2 = this;
-
-            //----- TODO: вынести в редусер -------
-
-            this.prepared_schedules = new Map();
-            this.prepared_locks = new Map();
-            this.prepared_templates = new Map();
-            this.prepared_other_schedules = new Map(); //TODO: забить попозже
-
-            this.currentColor = getColor(this.props.current_account);
-
-            var prepareMap = function prepareMap(m, src) {
-                src.forEach(function (dt) {
-                    var idx_start = (dt[0] - 1) * 24 + dt[1];
-                    var idx_stop = (dt[2] - 1) * 24 + dt[3];
-                    //log('start creating',idx_start, idx_stop)    
-                    for (var i = idx_start; i <= idx_stop; i++) {
-                        m.set(i, 6); //TODO: число столов аккаунта??
-                    }
-                });
-            };
-
-            this.props.schedules.filter(function (s) {
-                return s.accid === _this2.props.current_account;
-            }).forEach(function (acc) {
-                prepareMap(_this2.prepared_schedules, acc.data);
-                prepareMap(_this2.prepared_locks, acc.locks);
-                prepareMap(_this2.prepared_templates, acc.templates);
-            });
-
-            //----- TODO: вынести в редусер ------- !!!!
-
-
-            (0, _LimitsBaseComponent2.log)('prepared', this.prepared_schedules);
 
             var _days = [].concat(_toConsumableArray(Array(this.props.days).keys()));
             var _hours = [].concat(_toConsumableArray(Array(24).keys()));
@@ -43912,22 +43912,14 @@ var BarsEditor = function (_LimitsBaseComponent) {
                             var index = index_day * 24 + i2;
                             _this2.cellIndexes.set(index, [dd + 1, hh]);
 
-                            //Бордюр может быть??    
-                            var _selected = _this2.prepared_schedules.has(index);
-                            var _selected_marker = _this2.prepared_locks.has(index);
-
+                            //TODO: а не засунуть ли через спреад синтаксис в сам контрол а ему вклинивать класс и стили
+                            var _selected_schedule = _this2.props.account_schedules.has(index);
                             var cellStyles = {};
-                            if (_selected) {
-                                cellStyles.background = _this2.currentColor;
+                            if (_selected_schedule) {
+                                cellStyles.background = _this2.props.current_account_color;
                             }
 
-                            //не всегда отрабатывает selected
-                            var cellClasses = (0, _classnames2.default)({
-                                'barEditorHourCell': true,
-                                'disabled': false, //markers
-                                'selected': _selected
-                            });
-
+                            var cellClasses = _this2.getCellStyle(index, false, 0);
                             return _react2.default.createElement(
                                 'div',
                                 { draggable: 'true',
@@ -43961,68 +43953,51 @@ var BarsEditor = function (_LimitsBaseComponent) {
         //----------------------------------------------------
 
     }, {
-        key: 'setStartCell',
-        value: function setStartCell(index) {
-            // let indexes = [...this.cellRefs.keys()]
-            // this.selected_index = indexes.indexOf(key)
-            this.selected_index = index;
-        }
+        key: 'getCellStyle',
+        value: function getCellStyle(key, interactive, index) {
 
-        //FIXME: чистит и уже размеченные стили - должна добавлять !! 
+            var _selected_schedule = this.props.account_schedules.has(key);
+            var _selected_marker = this.props.account_markers.has(key);
+            var _selected_template = this.props.account_templates.has(key);
+            var _highlight = false;
 
-    }, {
-        key: 'setEndCell',
-        value: function setEndCell(index) {
-            var _this3 = this;
+            if (interactive) {
+                var min_idx = Math.min(index, this.selected_index);
+                var max_idx = Math.max(index, this.selected_index);
+                _highlight = key >= min_idx && key <= max_idx;
+            }
 
-            // let indexes = [...this.cellRefs.keys()]
-            // let index = indexes.indexOf(key)
-            // let min_idx = Math.min(index, this.selected_index)
-            // let max_idx = Math.max(index, this.selected_index)
-            var min_idx = Math.min(index, this.selected_index);
-            var max_idx = Math.max(index, this.selected_index);
-
-            //TODO: новая логика - обрабатываем все ячейки 
-            //стандартные селекторы + там где индекс между указанными подсвечиваем
-
-            (0, _LimitsBaseComponent2.log)('подсвечиваем ячейки', min_idx, max_idx, this.cellRefs);
-            this.cellIndexes.forEach(function (el) {
-                var _selected_schedule = _this3.prepared_schedules.has(index);
-                var _selected_marker = _this3.prepared_locks.has(index);
-
-                var cellClasses = (0, _classnames2.default)({
-                    'barEditorHourCell': true,
-                    'disabled': _selected_marker,
-                    'selected': _selected_schedule,
-                    'highlight': index >= min_idx && index <= max_idx + 1
-                });
-                (0, _LimitsBaseComponent2.log)(el);
-                //this.cellRefs.get(+el).className = cellClasses
+            var cellClasses = (0, _classnames2.default)({
+                'barEditorHourCell': true,
+                'disabled': _selected_marker,
+                'selected': _selected_schedule,
+                'highlight': _highlight,
+                'template': _selected_template,
+                'errors': _selected_marker && _selected_schedule || _highlight && _selected_marker
+                //в отрисовке просто так _selected_marker && _selected_schedule
             });
-            // indexes.slice(min_idx,max_idx+1).forEach(
-            //     el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
-            // )    
-            this._prev_h_key = undefined;
+
+            return cellClasses;
         }
+
+        //----------------------------------------------------
+
+        //TODO: ключ и индекс - разобраться
+
     }, {
         key: 'markFromStartToEndCell',
-        value: function markFromStartToEndCell(key) {
-            var indexes = [].concat(_toConsumableArray(this.cellRefs.keys()));
-            var index = indexes.indexOf(key);
+        value: function markFromStartToEndCell(index) {
+            // let indexes = [...this.cellRefs.keys()]
+            // let index = indexes.indexOf(key)
             var min_idx = Math.min(index, this.selected_index);
             var max_idx = Math.max(index, this.selected_index);
-            //log('Выделяем ячейки', min_idx,max_idx)
             this.props.schedulerActions.performAction(CMD.ADD_SCHEDULE, {
                 accid: this.props.current_account,
+                start_index: min_idx,
+                stop_index: max_idx,
                 start: this.cellIndexes.get(min_idx),
                 stop: this.cellIndexes.get(max_idx)
             });
-
-            // indexes.slice(min_idx,max_idx+1).forEach(
-            //     el => {
-            //         })
-            //     }
-            // )    
         }
 
         //----------------------------------------------------
@@ -44031,18 +44006,24 @@ var BarsEditor = function (_LimitsBaseComponent) {
         key: '_onDragStart',
         value: function _onDragStart(key, event) {
             // event.dataTransfer.setData('data', JSON.stringify("test")); 
-            //log(event.type, key) 
-            this.setStartCell(key);
+            this.selected_index = key;
         }
     }, {
         key: '_onDragOver',
         value: function _onDragOver(key, event) {
-            //log(event.type, key) 
+            var _this3 = this;
+
             event.preventDefault();
 
-            if (this._prev_h_key != key) this.setEndCell(key);
+            if (this._previous_hover_key != key) {
+                (0, _LimitsBaseComponent2.log)(event.type, key);
+                this.cellIndexes.forEach(function (el, currkey, m) {
+                    _this3.cellRefs.get(key).className = _this3.getCellStyle(key, true, currkey);
+                });
+                //this._previous_hover_key = undefined
+            }
 
-            this._prev_h_key = key;
+            this._previous_hover_key = key;
         }
     }, {
         key: '_onDrop',
@@ -44056,6 +44037,8 @@ var BarsEditor = function (_LimitsBaseComponent) {
             //     return;
             // }
             // log(data);
+
+            //Проверить нажатые клавиши - если нажат ctrl то только по подсвеченным клеткам пометка    
             this.markFromStartToEndCell(key);
         }
     }, {
@@ -44087,9 +44070,11 @@ var BarsEditor = function (_LimitsBaseComponent) {
     }, {
         key: '_onClickTwice',
         value: function _onClickTwice(key, event) {
-            //как отследить до одинарного клика?
+            //TODO: Перперед шедулеры должны лежать в редуксе - он должен по ним пробежаться и получить начальную и конечную дату    
             (0, _LimitsBaseComponent2.log)('TWICE', event, key);
-            //Удаляем если выделено
+            this.props.schedulerActions.performAction(CMD.DELETE_SCHEDULE, {
+                accid: this.props.current_account, index: key
+            });
         }
     }, {
         key: '_onClickOnce',
@@ -44107,20 +44092,17 @@ var BarsEditor = function (_LimitsBaseComponent) {
             //CTRL - отметка ячейки
             //CLICK - info
 
-
             // log("CTRL",event.ctrlKey)
             // log("ALT",event.altKey)
             // log("SHIFT",event.shiftKey)
 
             //Что будет если тут постучаться в child и добавить
 
-
             //Не могу достучаться ни к ключам ни к элементам    
             // log(this.cellRefs, this.cellRefs.size()) // 3, 5, 7
             // for (let value of this.cellRefs) {
             //     log(value) // 3, 5, 7
             // }
-
 
             var indexes = [].concat(_toConsumableArray(this.cellRefs.keys()));
             var index = indexes.indexOf(key);
@@ -61307,7 +61289,7 @@ exports = module.exports = __webpack_require__(31)(undefined);
 
 
 // module
-exports.push([module.i, ".gantt_info .grid-cell {\n  fill: #fff;\n  stroke: #eee; }\n\n.barEditorDayCell {\n  text-align: center;\n  font-weight: bold;\n  color: #ff8839; }\n\n.barEditorDay {\n  display: table-cell;\n  min-width: 28px; }\n\n.barEditorHourHeader {\n  color: #ff8839;\n  text-align: center;\n  font-weight: bold;\n  width: 30px;\n  height: 24px;\n  display: table-cell; }\n\n.barEditorHourCell {\n  font-weight: lighter;\n  color: #333;\n  /*shapeRendering: 'crispEdges',*/\n  background: #fafafa;\n  cursor: pointer;\n  border: 1px solid #fff;\n  width: 28px;\n  height: 28px;\n  display: table-cell; }\n\n.barEditorHourCell.selected {\n  color: #fff;\n  font-weight: bold; }\n\n.barEditorHourCell.higlight {\n  background: rgba(255, 202, 68, 0.22);\n  color: #3498db;\n  font-weight: bold; }\n\n.barEditorHourCell.disabled {\n  background: rgba(255, 202, 68, 0.22);\n  color: #09ad7e; }\n", ""]);
+exports.push([module.i, ".gantt_info .grid-cell {\n  fill: #fff;\n  stroke: #eee; }\n\n.barEditorDayCell {\n  text-align: center;\n  font-weight: bold;\n  color: #ff8839; }\n\n.barEditorDay {\n  display: table-cell;\n  min-width: 28px; }\n\n.barEditorHourHeader {\n  color: #ff8839;\n  text-align: center;\n  font-weight: bold;\n  width: 30px;\n  height: 24px;\n  display: table-cell; }\n\n.barEditorHourCell {\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  font-weight: lighter;\n  color: #333;\n  /*shapeRendering: 'crispEdges',*/\n  background: #fafafa;\n  cursor: pointer;\n  border: 1px solid #fff;\n  width: 28px;\n  height: 28px;\n  display: table-cell; }\n\n.barEditorHourCell.selected {\n  color: #fff;\n  font-weight: bold; }\n\n@-webkit-keyframes colorchange {\n  0% {\n    -webkit-text-stroke: 1px red; }\n  50% {\n    -webkit-text-stroke: 1px white; }\n  100% {\n    -webkit-text-stroke: 1px red; } }\n\n.barEditorHourCell.errors {\n  -webkit-text-fill-color: white;\n  -webkit-animation: colorchange 1s infinite;\n  font-weight: bold !important; }\n\n.barEditorHourCell.template {\n  border: 1px dashed #aaa !important; }\n\n.barEditorHourCell.highlight {\n  background: rgba(255, 202, 68, 0.22);\n  color: #3498db;\n  font-weight: bold; }\n\n.barEditorHourCell.disabled {\n  background: #aaa;\n  color: #09ad7e; }\n", ""]);
 
 // exports
 
@@ -61794,7 +61776,7 @@ exports = module.exports = __webpack_require__(31)(undefined);
 
 
 // module
-exports.push([module.i, "@charset \"UTF-8\";\n#accounts-table {\n  border-collapse: collapse;\n  border-color: #B7DDF2;\n  border-style: solid;\n  border-width: 1px;\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  margin-top: 5px;\n  text-align: left;\n  width: 100%; }\n  #accounts-table th {\n    font-size: 11px;\n    font-weight: bold;\n    padding: 15px 10px 10px; }\n  #accounts-table tbody tr td {\n    background: none repeat scroll 0 0 #FFFFFF; }\n  #accounts-table tr {\n    border-top: 1px dashed #B7DDF2; }\n  #accounts-table td {\n    color: #000000;\n    padding: 10px; }\n  #accounts-table tbody tr:hover td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n  #accounts-table tbody tr.current td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n\n/* .table > thead > tr > th, \n.table > tbody > tr > th, \n.table > tfoot > tr > th, \n.table > thead > tr > td, \n.table > tbody > tr > td, \n.table > tfoot > tr > td, \n.table > thead > tr > th, \n.table-bordered  */\n.accounts_table,\n.accounts_table > thead > tr > th,\n.accounts_table > tbody > tr > td {\n  border: 1px solid #ebeff2;\n  border-collapse: collapse !important;\n  border-spacing: 0 !important; }\n\n.accounts_table {\n  width: 100%; }\n\n.accounts_table > tbody > tr:hover {\n  background: #9f7e19 !important; }\n\n.accounts_table > tbody > tr.current {\n  border: 2px solid #000;\n  background: rgba(255, 68, 68, 0.36) !important; }\n\n/*tr:nth-child(even) {background: #CCC}*/\n/*tr:nth-child(odd) {background: #FFF}*/\ntd:first-child {\n  padding-top: 5px;\n  padding-bottom: 1px;\n  text-align: center;\n  vertical-align: middle;\n  /* пробовал top, bottom, baseline. Не помогает */ }\n\n.accounts_table > thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #ebeff2; }\n", ""]);
+exports.push([module.i, "@charset \"UTF-8\";\n#accounts-table {\n  border-collapse: collapse;\n  border-color: #B7DDF2;\n  border-style: solid;\n  border-width: 1px;\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  margin-top: 5px;\n  text-align: left;\n  width: 100%; }\n  #accounts-table th {\n    font-size: 11px;\n    font-weight: bold;\n    padding: 15px 10px 10px; }\n  #accounts-table tbody tr td {\n    background: none repeat scroll 0 0 #FFFFFF; }\n  #accounts-table tr {\n    border-top: 1px dashed #B7DDF2; }\n  #accounts-table td {\n    color: #000000;\n    padding: 10px; }\n  #accounts-table tbody tr:hover td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n  #accounts-table tbody tr.current td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n\n/* .table > thead > tr > th, \r\n.table > tbody > tr > th, \r\n.table > tfoot > tr > th, \r\n.table > thead > tr > td, \r\n.table > tbody > tr > td, \r\n.table > tfoot > tr > td, \r\n.table > thead > tr > th, \r\n.table-bordered  */\n.accounts_table,\n.accounts_table > thead > tr > th,\n.accounts_table > tbody > tr > td {\n  border: 1px solid #ebeff2;\n  border-collapse: collapse !important;\n  border-spacing: 0 !important; }\n\n.accounts_table {\n  width: 100%; }\n\n.accounts_table > tbody > tr:hover {\n  background: #9f7e19 !important; }\n\n.accounts_table > tbody > tr.current {\n  border: 2px solid #000;\n  background: rgba(255, 68, 68, 0.36) !important; }\n\n/*tr:nth-child(even) {background: #CCC}*/\n/*tr:nth-child(odd) {background: #FFF}*/\ntd:first-child {\n  padding-top: 5px;\n  padding-bottom: 1px;\n  text-align: center;\n  vertical-align: middle;\n  /* пробовал top, bottom, baseline. Не помогает */ }\n\n.accounts_table > thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #ebeff2; }\n", ""]);
 
 // exports
 

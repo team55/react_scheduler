@@ -18,8 +18,10 @@ export default class BarsEditor extends LimitsBaseComponent {
         
         this._onClick = this._onClick.bind(this)
         this._onDragStart = this._onDragStart.bind(this)
+        this._onDragOver = this._onDragOver.bind(this)
         this._onDrop = this._onDrop.bind(this)
         this.markFromStartToEndCell = this.markFromStartToEndCell.bind(this)
+        this.getCellStyle = this.getCellStyle.bind(this)
 
         this.size=[cellSize*24+64,cellSize*props.days+64] //??? вроде не нужно уже 
         this.cellRefs = new Map() //??? вроде не нужно уже 
@@ -29,43 +31,8 @@ export default class BarsEditor extends LimitsBaseComponent {
 
 
     render() {
-
-        //----- TODO: вынести в редусер -------
-
-        this.prepared_schedules = new Map()
-        this.prepared_locks = new Map()
-        this.prepared_templates = new Map()
-        this.prepared_other_schedules = new Map() //TODO: забить попозже
-
-        this.currentColor = getColor(this.props.current_account)
-        
-        let prepareMap = function(m,src){
-            src.forEach(dt=>{
-                let idx_start = (dt[0]-1)*24 + dt[1]    
-                let idx_stop = (dt[2]-1)*24 + dt[3]    
-                //log('start creating',idx_start, idx_stop)    
-                for (let i = idx_start; i <= idx_stop; i++) {
-                    m.set(i,6) //TODO: число столов аккаунта??
-                }
-            })
-        }
-
-        this.props.schedules
-            .filter(s=>s.accid===this.props.current_account)
-            .forEach((acc)=>{
-                prepareMap(this.prepared_schedules, acc.data)
-                prepareMap(this.prepared_locks, acc.locks)
-                prepareMap(this.prepared_templates, acc.templates)
-        })
-
-        //----- TODO: вынести в редусер ------- !!!!
-
-
-        log('prepared',this.prepared_schedules)
-
         let _days =  [...Array(this.props.days).keys()]
         let _hours =  [...Array(24).keys()]
-        
 
         return <div>
             <div className="barEditorDay" ></div>
@@ -87,23 +54,14 @@ export default class BarsEditor extends LimitsBaseComponent {
                                 let index = index_day*24 + i2
                                 this.cellIndexes.set(index,[dd+1,hh])
 
-                                //Бордюр может быть??    
-                                const _selected = this.prepared_schedules.has(index)
-                                const _selected_marker = this.prepared_locks.has(index)
-
-                                
+                                //TODO: а не засунуть ли через спреад синтаксис в сам контрол а ему вклинивать класс и стили
+                                const _selected_schedule = this.props.account_schedules.has(index)
                                 const cellStyles = {}
-                                if(_selected){
-                                    cellStyles.background = this.currentColor
+                                if(_selected_schedule){
+                                    cellStyles.background = this.props.current_account_color
                                 }
 
-                                //не всегда отрабатывает selected
-                                const cellClasses = classNames({
-                                    'barEditorHourCell': true,
-                                    'disabled':false, //markers
-                                    'selected': _selected
-                                });
-
+                                const cellClasses = this.getCellStyle(index,false,0)
                                 return <div draggable="true" 
                                         style={cellStyles}
                                         className={cellClasses}
@@ -129,84 +87,74 @@ export default class BarsEditor extends LimitsBaseComponent {
 
     }
 
+
+    //----------------------------------------------------
+    getCellStyle(key, interactive, index){
+
+        const _selected_schedule = this.props.account_schedules.has(key)
+        const _selected_marker = this.props.account_markers.has(key)
+        const _selected_template = this.props.account_templates.has(key)
+        let _highlight = false
+
+        if(interactive){
+            let min_idx = Math.min(index, this.selected_index)
+            let max_idx = Math.max(index, this.selected_index)
+            _highlight = key>=min_idx && key<=max_idx
+        }
+
+        const cellClasses = classNames({
+            'barEditorHourCell': true,
+            'disabled': _selected_marker, 
+            'selected': _selected_schedule,
+            'highlight': _highlight,
+            'template': _selected_template,
+            'errors': (_selected_marker && _selected_schedule) || (_highlight && _selected_marker)
+            //в отрисовке просто так _selected_marker && _selected_schedule
+        });
+
+        return cellClasses
+    }
+
+
     //----------------------------------------------------
 
-    setStartCell(index){
-        // let indexes = [...this.cellRefs.keys()]
-        // this.selected_index = indexes.indexOf(key)
-        this.selected_index = index
-    }
-
-    //FIXME: чистит и уже размеченные стили - должна добавлять !! 
-    setEndCell(index){
+    //TODO: ключ и индекс - разобраться
+    markFromStartToEndCell(index){
         // let indexes = [...this.cellRefs.keys()]
         // let index = indexes.indexOf(key)
-        // let min_idx = Math.min(index, this.selected_index)
-        // let max_idx = Math.max(index, this.selected_index)
         let min_idx = Math.min(index, this.selected_index)
         let max_idx = Math.max(index, this.selected_index)
-
-        //TODO: новая логика - обрабатываем все ячейки 
-        //стандартные селекторы + там где индекс между указанными подсвечиваем
-
-        log('подсвечиваем ячейки', min_idx,max_idx, this.cellRefs)
-        this.cellIndexes.forEach(el => {
-                const _selected_schedule = this.prepared_schedules.has(index)
-                const _selected_marker = this.prepared_locks.has(index)
-
-                const cellClasses = classNames({
-                    'barEditorHourCell': true,
-                    'disabled': _selected_marker, 
-                    'selected': _selected_schedule,
-                    'highlight': index>=min_idx && index<=max_idx+1
-                });
-                log(el)
-                //this.cellRefs.get(+el).className = cellClasses
-            }
-        )    
-        // indexes.slice(min_idx,max_idx+1).forEach(
-        //     el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
-        // )    
-        this._prev_h_key = undefined
-    }
-
-    markFromStartToEndCell(key){
-        let indexes = [...this.cellRefs.keys()]
-        let index = indexes.indexOf(key)
-        let min_idx = Math.min(index, this.selected_index)
-        let max_idx = Math.max(index, this.selected_index)
-        //log('Выделяем ячейки', min_idx,max_idx)
         this.props.schedulerActions.performAction(
             CMD.ADD_SCHEDULE,
             {
                 accid:this.props.current_account,
+                start_index:min_idx,
+                stop_index:max_idx,
                 start:this.cellIndexes.get(min_idx),
                 stop:this.cellIndexes.get(max_idx)
             })
 
-        // indexes.slice(min_idx,max_idx+1).forEach(
-        //     el => {
-        //         })
-        //     }
-        // )    
     }
 
 
     //----------------------------------------------------
     _onDragStart(key, event){
         // event.dataTransfer.setData('data', JSON.stringify("test")); 
-        //log(event.type, key) 
-        this.setStartCell(key)    
+        this.selected_index = key
     }
 
     _onDragOver(key,event) {
-        //log(event.type, key) 
         event.preventDefault()
 
-        if(this._prev_h_key != key)
-            this.setEndCell(key)
+        if(this._previous_hover_key != key) {
+            log(event.type, key) 
+            this.cellIndexes.forEach(
+                (el,currkey,m) => {this.cellRefs.get(key).className = this.getCellStyle(key,true,currkey)
+            })    
+            //this._previous_hover_key = undefined
+        }
 
-        this._prev_h_key = key
+        this._previous_hover_key = key
     }
     _onDrop(key, event) {
         log(event.type, key) 
@@ -218,12 +166,11 @@ export default class BarsEditor extends LimitsBaseComponent {
         //     return;
         // }
         // log(data);
+
+        //Проверить нажатые клавиши - если нажат ctrl то только по подсвеченным клеткам пометка    
         this.markFromStartToEndCell(key)
      }
 
-
-
- 
 
 
     _onClick(key,event) {
@@ -254,9 +201,14 @@ export default class BarsEditor extends LimitsBaseComponent {
 
 
     _onClickTwice(key, event){
-        //как отследить до одинарного клика?
+        //TODO: Перперед шедулеры должны лежать в редуксе - он должен по ним пробежаться и получить начальную и конечную дату    
         log('TWICE',event, key) 
-        //Удаляем если выделено
+        this.props.schedulerActions.performAction(
+            CMD.DELETE_SCHEDULE, 
+            {
+                accid:this.props.current_account, index: key
+            })
+
     }
 
     _onClickOnce(key, event){
@@ -271,20 +223,17 @@ export default class BarsEditor extends LimitsBaseComponent {
         //CTRL - отметка ячейки
         //CLICK - info
 
-        
         // log("CTRL",event.ctrlKey)
         // log("ALT",event.altKey)
         // log("SHIFT",event.shiftKey)
 
         //Что будет если тут постучаться в child и добавить
-        
 
         //Не могу достучаться ни к ключам ни к элементам    
         // log(this.cellRefs, this.cellRefs.size()) // 3, 5, 7
         // for (let value of this.cellRefs) {
         //     log(value) // 3, 5, 7
         // }
-
 
         let indexes = [...this.cellRefs.keys()]
         let index = indexes.indexOf(key)
@@ -309,9 +258,7 @@ export default class BarsEditor extends LimitsBaseComponent {
                 this.selected_index = index;                
                 log('Начали выделять shift', index)
             }
-
         }
-
 
         if (!(event.ctrlKey || event.shiftKey)) {
             this.selected_index = 0;                
