@@ -13,9 +13,9 @@ export const initialState = {
     //Цвет присваивается на момент включения и остается за аккаунтом (может быть в расписании)
     //TODO: поведение когда подгрузился аккаунт по фильтру - например убрали лимиты
     accounts: [
-        {accid:1000, name:'acc1', comp_name:'comp1', selected:false, color:'', limits:[]},
-        {accid:1001, name:'acc2', comp_name:'comp1', selected:false, color:'', limits:[]}, //по этому нет данных
-        {accid:1002, name:'acc3', comp_name:'comp2', selected:true,  color:'', limits:[]}]
+        {accid:1000, name:'acc1', comp_name:'comp1', selected:false, limits:[], tables:6},
+        {accid:1001, name:'acc2', comp_name:'comp1', selected:false, limits:[], tables:4}, //по этому нет данных
+        {accid:1002, name:'acc3', comp_name:'comp2', selected:true,  limits:[], tables:6}]
     ,
     //вот тут вопрос - засунуть это в аккаунт или хранить отдельно
     //TODO: это должно быть в редусере
@@ -28,8 +28,8 @@ export const initialState = {
     //предсказания по таргет лимиту аккаунта? 
     predictions: [ [1,0,10],[1,1,9],[1,3,5] ], 
     //Аккаунт график которого редактируем
-    current_account:1000, 
-    current_account_tables:0,
+    current_account:{}, 
+    // current_account_tables:0,
     //Колонка по которой сортируются данные
     sort_account: '',
     account_sort_order: '',

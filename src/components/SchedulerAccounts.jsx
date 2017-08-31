@@ -18,14 +18,12 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
     constructor(props){
         super('ACCOUNTS',props)
 
-        this.handleChange = this.handleChange.bind(this)
-        this.handleSubmit = this.handleSubmit.bind(this)
-        this.clickCallBack = this.clickCallBack.bind(this);
+        // this.handleChange = this.handleChange.bind(this)
+        // this.handleSubmit = this.handleSubmit.bind(this)
 
-        //---------------------------------------------------
+        this.clickCallBack = this.clickCallBack.bind(this);
         this._handleSearch = this._handleSearch.bind(this)
         this._handleSort = this._handleSort.bind(this)
-
 
         //В зависимости от режима разный состав колонок (точнее нет колонки с флажками отметками)
         this.titles = ['*','*','accid','name'] //Вынести в стейт, сделать объектами, добавить признак сортировки (пусто, возр, убыв)
@@ -49,9 +47,9 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
     }
 
     //Изменение текста элемента УДАЛИТЬ
-    handleChange(e) {
-        this.props.schedulerActions.performAction(CMD.SET_ACCOUNT,+e.target.value)
-    }
+    // handleChange(e) {
+    //     this.props.schedulerActions.performAction(CMD.SET_ACCOUNT,+e.target.value)
+    // }
 
     //Найти по лимиту - добавить в нужный уровень
     handleSubmit(e) {
@@ -59,7 +57,7 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
         // log('SUBMIT PROPS', this.props)
         // log('SUBMIT STATE', this.state)
         let newItem = {
-            accid: this.props.current_account,
+            accid: this.props.current_account.accid,
             name:'accid',
             selected:true
         };
@@ -116,10 +114,10 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
                 <input key={'account_search_field'} onChange={this._handleSearch} value={this.props.search_account} />
 
                 {/*-------------------------- TODO: УДАЛИТЬ ----------------------------------*/}
-                <form onSubmit={this.handleSubmit}>
-                    <input onChange={this.handleChange} value={this.props.current_account} />
-                    <button>{'Add #' + (this.props.accounts.length + 1)}</button>
-                </form>
+                {/* <form onSubmit={this.handleSubmit}> */}
+                    {/* <input onChange={this.handleChange} value={this.props.current_account.accid} /> */}
+                    {/* <button>{'Add #' + (this.props.accounts.length + 1)}</button> */}
+                {/* </form> */}
                 {/*-------------------------- TODO: УДАЛИТЬ ----------------------------------*/}
 
                 <table id="accounts-table">
@@ -144,7 +142,7 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
 
                             const trClasses = classNames({
                                 // 'main-class': true,
-                                'current': row.accid===this.props.current_account && this.props.current_mode === 'edit'
+                                'current': this.props.current_account!=undefined && row.accid===this.props.current_account.accid && this.props.current_mode === 'edit'
                             });
                             //..return (<li className={liClasses}>{data.name}</li>);
 
@@ -161,7 +159,7 @@ export default class SchedulerAccounts extends LimitsBaseComponent {
                                 component="tr" className={trClasses}
                                 data-acc={row['accid']}>
 
-                                <td style={accStyle} onClick={ (e,e1) => this.clickCallBack(row.accid, e)}></td>
+                                <td style={accStyle} onClick={ (e,e1) => this.clickCallBack(row, e)}></td>
                                 <td key={'sw_'+row.accid}>
                                     <Toggle key={'tgl_'+row.accid} {...{accid:row.accid, selected:row.selected, schedulerActions:this.props.schedulerActions}}/>
                                 </td>

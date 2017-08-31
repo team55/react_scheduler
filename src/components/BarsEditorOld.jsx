@@ -69,7 +69,7 @@ export default class BarsEditor extends LimitsBaseComponent {
                     prediction: dd+hh, //todo: взять по таргету лимита аккаунта минус уже имеющиеся по данному лимиту
 
                     //Аккаунтов в дате могут быть несколько - несколько цветов в ячейке
-                    selected: this.prepared_schedules[`${this.props.current_account}_${dd}-${hh}`]==1, //TODO: массив аккаунтов
+                    selected: this.prepared_schedules[`${this.props.current_account.accid}_${dd}-${hh}`]==1, //TODO: массив аккаунтов
                     hovered: false,
                     //Маркеры отрисовываются в зависимости от аккаунта
                     excluded: false//исключенные по ключу

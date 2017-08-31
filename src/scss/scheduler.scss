@@ -1,4 +1,7 @@
 @import "colors";
+$cell-size: 28px;
+$cell-dsize: 54px;
+$full-cell-size: 30px;
 
 .gantt_info {
 
@@ -69,13 +72,15 @@
 
 .barEditorEmpty {
   background: #fff;
-  width: 30px;
+  width: $full-cell-size;
+  min-width: $full-cell-size;
   display: table-cell;
-  height: 28px;
+  height: $cell-size;
 }
 
 .barEditorDay {
-  width: 28px;
+  width: $cell-size;
+  min-width: $cell-size;
 }
 
 .barEditorDay, .barEditorHourHeader, .barEditorTotal, .barEditorTotalHeader {
@@ -89,15 +94,17 @@
   border: 1px solid #fff;
 
   display: table-cell;
-  height: 28px;
+  height: $cell-size;
 }
 
 .barEditorHourHeader {
-  width: 28px;
+  width: $cell-size;
+  min-width: $cell-size;
 }
 
 .barEditorTotal, .barEditorTotalHeader {
-  width: 54px;
+  width: $cell-dsize;
+  min-width: $cell-dsize;
 }
 
 .barEditorHourCell {
@@ -110,8 +117,9 @@
   background: #fafafa;
   cursor: pointer;
   border: 1px solid #fff;
-  width: 28px;
-  height: 28px;
+  min-width: $cell-size;
+  width: $cell-size;
+  height: $cell-size;
 
   display: table-cell;
 }

@@ -24,14 +24,19 @@ export default class BarsEditor extends LimitsBaseComponent {
         this.getCellStyle = this.getCellStyle.bind(this)
 
         this.size=[cellSize*24+64,cellSize*props.days+64] //??? вроде не нужно уже 
-        this.cellRefs = new Map() //??? вроде не нужно уже 
+        this.cellRefs = new Map() //??? вроде не нужно кроме закрашивания нужным цветом при выделении?
         this.cellIndexes = new Map()
         this.selected_index = 0
     }
 
 
     render() {
-        let _days =  [...Array(this.props.days).keys()]
+        
+        let {days, day_totals, account_schedules,current_account} = {...this.props}
+        log('RENDER',current_account)     
+
+        //let _days =  [...Array(this.props.days).keys()]
+        let _days =  [...Array(days).keys()]
         let _hours =  [...Array(24).keys()]
 
         return <div className="barEditorRoot">
@@ -48,7 +53,8 @@ export default class BarsEditor extends LimitsBaseComponent {
             {
                 _days.map((dd,index_day)=>{
                     let curr_dd = dd+1    
-                    let ttls = this.props.day_totals.get(curr_dd)
+                    {/* let ttls = this.props.day_totals.get(curr_dd) */}
+                    let ttls = day_totals.get(curr_dd)
 
                     return <div key={"date_"+curr_dd}>
                         {/* TODO: предсказание по таргет лимиту аккаунта*/}
@@ -61,10 +67,11 @@ export default class BarsEditor extends LimitsBaseComponent {
                                 this.cellIndexes.set(index,[dd+1,hh])
 
                                 //TODO: а не засунуть ли через спреад синтаксис в сам контрол а ему вклинивать класс и стили
-                                const _selected_schedule = this.props.account_schedules.has(index)
+                                {/* const _selected_schedule = this.props.account_schedules.has(index) */}
+                                const _selected_schedule = account_schedules.has(index)
                                 const cellStyles = {}
                                 if(_selected_schedule){
-                                    cellStyles.background = this.props.current_account_color
+                                    cellStyles.background = getColor(current_account.accid)
                                 }
 
                                 const cellClasses = this.getCellStyle(index,false,0)
@@ -136,7 +143,7 @@ export default class BarsEditor extends LimitsBaseComponent {
         this.props.schedulerActions.performAction(
             CMD.ADD_SCHEDULE,
             {
-                accid:this.props.current_account,
+                accid:this.props.current_account.accid,
                 start_index:min_idx,
                 stop_index:max_idx,
                 start:this.cellIndexes.get(min_idx),
@@ -213,7 +220,7 @@ export default class BarsEditor extends LimitsBaseComponent {
         this.props.schedulerActions.performAction(
             CMD.DELETE_SCHEDULE, 
             {
-                accid:this.props.current_account, index: key
+                accid:this.props.current_account.accid, index: key
             })
 
     }
@@ -283,6 +290,7 @@ BarsEditor.propTypes = {
     account_templates: PropTypes.object.isRequired,
     day_totals: PropTypes.object.isRequired,
     current_mode: PropTypes.string.isRequired,
+    current_account: PropTypes.object.isRequired,
     //setMode: PropTypes.func.isRequired
     schedulerActions: PropTypes.object.isRequired
 }

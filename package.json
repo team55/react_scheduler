@@ -46,6 +46,8 @@
     "webpack": "^3.5.5"
   },
   "dependencies": {
+    "webix-gpl": "0.0.1",
+    "webix-npm": "^4.4.5",
     "webpack-dev-server": "^2.7.1"
   }
 }

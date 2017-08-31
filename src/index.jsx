@@ -4,6 +4,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import Redux, { createStore, bindActionCreators, combineReducers } from 'redux'
 import { connect, Provider } from 'react-redux'
+import webix from 'webix-npm'
 
 //components
 import {log} from './components/LimitsBaseComponent.jsx'
@@ -31,9 +32,12 @@ import  './css/main.css';
 //markers
 //schedules
 
+//https://stackoverflow.com/questions/29775797/fetch-post-json-data
 
-
-function baseJsonRequest(url,method,body) {
+//Как выход - слать как шлется плайн текстом
+//В API запилить FetchCompatibleRestApi где прилетают плайны
+//а дальше работают конвертеры 
+function baseJsonRequest(url,method,json) {
     //Сделать контроллер запроса ?
     //Поддержка кроссдомена, редирект как ошибка
 
@@ -46,32 +50,38 @@ function baseJsonRequest(url,method,body) {
     //     console.log(response.url);  
     // });
 
-    return fetch(url, {  
-     method: method,  
-//     headers: {  
-//       "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"  
-//     },  
-     mode: 'no-cors',
-     body: body  
-   })
-   //ОБРАБОТКА ОШИБОК??
-//   .then(json)  
-//   .then(function (data) {  
-//     console.log('Request succeeded with JSON response', data);  
-//   })  
-//   .catch(function (error) {  
-//     console.log('Request failed', error);  
-//   });
+    let myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    
+    // let myInit = {  
+    //     method: method,
+    //     headers: myHeaders,
+    //     mode: 'no-cors',
+    //     credentials: 'include', 
+    //     cache: 'default',
+    //     body: json 
+    // }
+
+    let myInit = {  
+        //mode: 'no-cors',
+        method: method,
+        body: json 
+    }
+
+    return fetch(url, myInit)
 }
 
 async function postJsonRequest(url, body) {
-    let response = await baseJsonRequest(url,'post',JSON.stringify(body))
+    log('STEP 1')
+    let response = await baseJsonRequest(url,'POST',JSON.stringify(body))
+    log('STEP 2', response)
     let json = await response.json()
+    log('STEP 3')
     return json
 }
 
 async function putJsonRequest(url) {
-    let response = await baseJsonRequest(url,'put',JSON.stringify(body))
+    let response = await baseJsonRequest(url,'PUT',JSON.stringify(body))
     let json = await response.json()
     return json
 }
@@ -82,6 +92,38 @@ async function getJsonRequest(url) {
     return json
 }
 
+//НЕ ТЕ ПРОМАЙСЫ !!!
+// async function postJson(url,data, callback, badcallback){
+    
+//     log('calling post')
+//     let rest = await webix.ajax().headers({
+//         "Content-type": "application/json"
+//     }).post(url, JSON.stringify(data), function (text, data) {
+//         log('calling post complete',text, data)
+//         const resp = data.json()
+//         log(resp)
+//         //const resp = JSON.parse(data);
+//         if (resp.success) {
+//             if(callback) callback()
+//         } else {
+//             if(badcallback) badcallback
+//         }
+//     })
+// }
+
+
+//В примерах приводят такое как работающую функцию - но у меня не получилось ее запустить...
+function sendRequest(url, method, body) {
+    
+    const options = {
+        method: method,
+        headers: new Headers({'content-type': 'application/json'}),
+        mode: 'no-cors'
+    };
+
+    options.body = JSON.stringify(body);
+    return fetch(url, options);
+}
 
 
 //FIXME: в стейт передается старый стейт - потом он маппится в проперти
@@ -103,35 +145,37 @@ function editorStateReducer(state, action) {
             log(el,key)
             let cur = day_totals.get(el.day+1) //0 based
             cur.hours++
+            cur.tables = cur.hours * el.tables
         } )
 
 
         return day_totals
     }
 
-    //если в пайлод запихнули параметры то можем их все пробросить в стейт
-    //но если надо делать какое то действие то не обойтись без логики (хотя мы же можем и функцию передать которой обработать)
-    let prepareMap = function(m,src){
-        src.forEach(dt=>{
-            let idx_start = (dt[0]-1)*24 + dt[1]    
-            let idx_stop = (dt[2]-1)*24 + dt[3]    
-            //log('start creating',idx_start, idx_stop)    
-            for (let i = idx_start; i <= idx_stop; i++) {
-                m.set(i, {
-                    tables:state.current_account_tables,
-                    day: Math.floor( (i/24) ),
-                    // hour: i - ((i/24)+1) * 24
-                } ) 
-            }
-        })
-    }
-
+    
     switch (action.type) {
 
         case CMD.TOGGLE_MODE:
             return { ...state, current_mode: state.current_mode === 'edit'?'view':'edit' }
 
         case CMD.SET_ACCOUNT:
+
+            //если в пайлод запихнули параметры то можем их все пробросить в стейт
+            //но если надо делать какое то действие то не обойтись без логики (хотя мы же можем и функцию передать которой обработать)
+            let prepareMap = function(m,src){
+                src.forEach(dt=>{
+                    let idx_start = (dt[0]-1)*24 + dt[1]    
+                    let idx_stop = (dt[2]-1)*24 + dt[3]    
+                    //log('start creating',idx_start, idx_stop)    
+                    for (let i = idx_start; i <= idx_stop; i++) {
+                        m.set(i, {
+                            tables:action.payload.tables,
+                            day: Math.floor( (i/24) ),
+                            // hour: i - ((i/24)+1) * 24
+                        } ) 
+                    }
+                })
+            }
 
             //ЧИТАЕМ С БАЗЫ ДАННЫХ
             //МАПИМ В КОЛЛЕКЦИИ часов
@@ -146,7 +190,7 @@ function editorStateReducer(state, action) {
             let color = getColor(action.payload)
 
             state.schedules
-                .filter(s=>s.accid===action.payload)
+                .filter(s=>s.accid===action.payload.accid)
                 .forEach((acc)=>{
                     prepareMap(account_schedules, acc.schedules)
                     prepareMap(account_markers,   acc.markers)
@@ -157,7 +201,6 @@ function editorStateReducer(state, action) {
 
             return {...state, 
                 current_account: action.payload,
-                current_account_color: color, 
                 account_schedules:account_schedules,
                 account_markers:account_markers,
                 account_templates:account_templates,
@@ -198,7 +241,7 @@ function editorStateReducer(state, action) {
 
         //УБРАТЬ ПОТОМ
         case CMD.ADD_ACCOUNT:
-            return { ...state, current_account: 0, accounts: state.accounts.concat(action.payload) }
+            return { ...state, current_account: {}, accounts: state.accounts.concat(action.payload) }
 
 
         case CMD.ADD_SCHEDULE: {
@@ -206,48 +249,70 @@ function editorStateReducer(state, action) {
             // val account_id: String = "",
         	// val start: Timestamp = Timestamp(System.currentTimeMillis()),
 	        // val stop: Timestamp = Timestamp(System.currentTimeMillis())
+            //Что вебикс что fetch возвращают 
 
-            // let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_task',{"account_id":"1000"})
-            // data.then(json=>{
-            //     log('CREATE SCHEDULE on SERVER:', json)
+             let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_tasks',{account:1000})
+              data.then(json=>{
+                  log('CREATE SCHEDULE on SERVER:', json)
 
                 //Интервалы всех расписаний?? Убрать или нет потом?
-                let all_schedules = state.schedules.slice()
-                all_schedules.forEach(e=>{
-                    if(e.accid===action.payload.accid) {
-                        let start = action.payload.start
-                        let stop = action.payload.stop
-                        let toadd = [start[0],start[1],stop[0],stop[1]]
-                        e.schedules.push(toadd)
-                    }
-                })
 
-                //-------------------------------------------------------
-                //TODO: вынести в отдельную функцию подготовку данных аккаунта
-                //FIXME: публиковать в ощий стор - потом подтягивать данные
-                //Часы конкретного аккаунта - c индекса до индекса
-                let acc_schedules = new Map(state.account_schedules) //state.account_schedules.slice() //ТУТ МАП
-                for (let i = action.payload.start_index; i <= action.payload.stop_index; i++) {
-                    acc_schedules.set(i, {
-                        tables:state.current_account_tables,
-                        day: Math.floor( (i/24) ),
-                    // hour: i - ((i/24)+1) * 24
-                }) 
-                }
+                // postJson(
+                //     'http://localhost:9000/accounts_scheduler_api/v2/create_tasks',
+                //     {account:1000},
+                //     ()=>{
 
-                let day_totals = calculateAccountTotals(acc_schedules)
-                return { ...state, 
-                    schedules:all_schedules, 
-                    account_schedules:acc_schedules,
-                    day_totals:day_totals} 
+                //         log('Проверка')
 
+                        //ЭТОТ КОД УЖЕ В ДРУГОМ КОНТЕКСТЕ ... 
+        
+            //         },
+            //         ()=>{}
+            // )
+                
             //-------------------------------------------------------
 
                 
-            // }).catch(function (error) {  
-            //     log('Request failed:', error);  
-            //     return { ...state} 
-            // });
+            }).catch(function (error) {  
+                log('Request failed:', error);  
+                return { ...state} 
+            });
+
+
+            //ТУТ РАЗБИТЬ НА ТРИ ЧАСТИ
+            //Первая - отправка на создание (акк и интервалы) заносим в стейт создающихся - они мигают
+            //После создания (оповестить что такие-то созданы) - поменять статус или удалить
+
+            let all_schedules = state.schedules.slice()
+            all_schedules.forEach(e=>{
+                if(e.accid===action.payload.accid) {
+                    let start = action.payload.start
+                    let stop = action.payload.stop
+                    let toadd = [start[0],start[1],stop[0],stop[1]]
+                    e.schedules.push(toadd)
+                }
+            })
+
+            //-------------------------------------------------------
+            //TODO: вынести в отдельную функцию подготовку данных аккаунта
+            //FIXME: публиковать в ощий стор - потом подтягивать данные
+            //Часы конкретного аккаунта - c индекса до индекса
+            let acc_schedules = new Map(state.account_schedules) //state.account_schedules.slice() //ТУТ МАП
+            for (let i = action.payload.start_index; i <= action.payload.stop_index; i++) {
+                acc_schedules.set(i, {
+                    tables:state.current_account.tables,
+                    day: Math.floor( (i/24) ),
+                // hour: i - ((i/24)+1) * 24
+            }) 
+            }
+
+            let day_totals = calculateAccountTotals(acc_schedules)
+            return { ...state, 
+                schedules:all_schedules, 
+                account_schedules:acc_schedules,
+                day_totals:day_totals} 
+
+
 
 
         }
