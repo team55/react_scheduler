@@ -21,9 +21,9 @@ export const initialState = {
     //TODO: это должно быть в редусере
     //TODO: не разбить ли на отдельные записи?
     schedules: [
-        {accid:1000, schedules:[ [20,0,22,6],[24,1,24,4],[25,22,26,4],[1,22,2,8] ],  templates:[], markers:[ [22,1,24,12] ], },
-        {accid:1001, schedules:[ [1,0,1,6],[29,1,29,4],[25,22,26,4]],  templates:[],markers:[ [22,2,24,3] ],},
-        {accid:1002, schedules:[ [1,0,1,6], [2,0,2,6] ], templates:[ [2,0,2,6] ], markers:[ [22,2,24,3] ],}
+        {accid:1000, status:'editing', schedules:[ [20,0,22,6],[24,1,24,4],[25,22,26,4],[1,22,2,8] ],  templates:[], markers:[ [22,1,24,12] ], },
+        {accid:1001, status:'editing', schedules:[ [1,0,1,6],[29,1,29,4],[25,22,26,4]],  templates:[],markers:[ [22,2,24,3] ],},
+        {accid:1002, status:'editing', schedules:[ [1,0,1,6], [2,0,2,6] ], templates:[ [2,0,2,6] ], markers:[ [22,2,24,3] ],}
     ],
     //предсказания по таргет лимиту аккаунта? 
     predictions: [ [1,0,10],[1,1,9],[1,3,5] ], 

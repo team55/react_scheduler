@@ -53,18 +53,12 @@ function baseJsonRequest(url,method,json) {
     let myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     
-    // let myInit = {  
-    //     method: method,
-    //     headers: myHeaders,
-    //     mode: 'no-cors',
+    let myInit = {  
+        method: method,
+        headers: myHeaders,
+        mode: 'cors',
     //     credentials: 'include', 
     //     cache: 'default',
-    //     body: json 
-    // }
-
-    let myInit = {  
-        //mode: 'no-cors',
-        method: method,
         body: json 
     }
 
@@ -251,7 +245,8 @@ function editorStateReducer(state, action) {
 	        // val stop: Timestamp = Timestamp(System.currentTimeMillis())
             //Что вебикс что fetch возвращают 
 
-             let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_tasks',{account:1000})
+            //  let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_tasks',{account:1000})
+             let data = postJsonRequest('http://localhost:8080/accounts_scheduler_api/v2/create_tasks',{account:1000})
               data.then(json=>{
                   log('CREATE SCHEDULE on SERVER:', json)
 

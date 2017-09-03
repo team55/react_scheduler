@@ -14839,7 +14839,7 @@ var initialState = exports.initialState = {
     //вот тут вопрос - засунуть это в аккаунт или хранить отдельно
     //TODO: это должно быть в редусере
     //TODO: не разбить ли на отдельные записи?
-    schedules: [{ accid: 1000, schedules: [[20, 0, 22, 6], [24, 1, 24, 4], [25, 22, 26, 4], [1, 22, 2, 8]], templates: [], markers: [[22, 1, 24, 12]] }, { accid: 1001, schedules: [[1, 0, 1, 6], [29, 1, 29, 4], [25, 22, 26, 4]], templates: [], markers: [[22, 2, 24, 3]] }, { accid: 1002, schedules: [[1, 0, 1, 6], [2, 0, 2, 6]], templates: [[2, 0, 2, 6]], markers: [[22, 2, 24, 3]] }],
+    schedules: [{ accid: 1000, status: 'editing', schedules: [[20, 0, 22, 6], [24, 1, 24, 4], [25, 22, 26, 4], [1, 22, 2, 8]], templates: [], markers: [[22, 1, 24, 12]] }, { accid: 1001, status: 'editing', schedules: [[1, 0, 1, 6], [29, 1, 29, 4], [25, 22, 26, 4]], templates: [], markers: [[22, 2, 24, 3]] }, { accid: 1002, status: 'editing', schedules: [[1, 0, 1, 6], [2, 0, 2, 6]], templates: [[2, 0, 2, 6]], markers: [[22, 2, 24, 3]] }],
     //предсказания по таргет лимиту аккаунта? 
     predictions: [[1, 0, 10], [1, 1, 9], [1, 3, 5]],
     //Аккаунт график которого редактируем
@@ -37500,7 +37500,8 @@ function baseJsonRequest(url, method, json) {
     // }
 
     var myInit = {
-        //mode: 'no-cors',
+        headers: myHeaders,
+        mode: 'cors',
         method: method,
         body: json
     };
@@ -37644,7 +37645,8 @@ function editorStateReducer(state, action) {
                 // val stop: Timestamp = Timestamp(System.currentTimeMillis())
                 //Что вебикс что fetch возвращают 
 
-                var data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_tasks', { account: 1000 });
+                //  let data = postJsonRequest('http://localhost:9000/accounts_scheduler_api/v2/create_tasks',{account:1000})
+                var data = postJsonRequest('http://localhost:8080/accounts_scheduler_api/v2/create_tasks', { account: 1000 });
                 data.then(function (json) {
                     (0, _LimitsBaseComponent.log)('CREATE SCHEDULE on SERVER:', json);
 
@@ -91184,8 +91186,6 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(19);
@@ -91258,7 +91258,8 @@ var BarsEditor = function (_LimitsBaseComponent) {
         value: function render() {
             var _this2 = this;
 
-            var _props = _extends({}, this.props),
+            // let {days, day_totals, account_schedules,current_account} = {...this.props}
+            var _props = this.props,
                 days = _props.days,
                 day_totals = _props.day_totals,
                 account_schedules = _props.account_schedules,
@@ -91374,17 +91375,25 @@ var BarsEditor = function (_LimitsBaseComponent) {
 
     }, {
         key: 'getCellStyle',
-        value: function getCellStyle(key, interactive, index) {
+        value: function getCellStyle(check_key, interactive, key) {
 
-            var _selected_schedule = this.props.account_schedules.has(key);
-            var _selected_marker = this.props.account_markers.has(key);
-            var _selected_template = this.props.account_templates.has(key);
+            var _selected_schedule = this.props.account_schedules.has(check_key);
+            var _selected_marker = this.props.account_markers.has(check_key);
+            var _selected_template = this.props.account_templates.has(check_key);
             var _highlight = false;
 
             if (interactive) {
-                var min_idx = Math.min(index, this.selected_index);
-                var max_idx = Math.max(index, this.selected_index);
-                _highlight = key >= min_idx && key <= max_idx;
+                // let min_idx = Math.min(check_key, this.selected_index)
+                // let max_idx = Math.max(check_key, this.selected_index)
+                // _highlight = key>=min_idx && key<=max_idx
+
+                //От начала, до клетки где находимся
+                var min_idx = Math.min(key, this.selected_index);
+                var max_idx = Math.max(key, this.selected_index);
+                //проверяемая в диапазоне?
+                _highlight = check_key >= min_idx && check_key <= max_idx;
+
+                if (_highlight) (0, _LimitsBaseComponent2.log)('getCellStyle', key, interactive, check_key, min_idx, max_idx, _highlight);
             }
 
             var cellClasses = (0, _classnames2.default)({
@@ -91426,8 +91435,15 @@ var BarsEditor = function (_LimitsBaseComponent) {
         key: '_onDragStart',
         value: function _onDragStart(key, event) {
             // event.dataTransfer.setData('data', JSON.stringify("test")); 
+            (0, _LimitsBaseComponent2.log)(event.type, key);
             this.selected_index = key;
+
+            //TODO: определить что находимся в уже выделенном - тогда таскаем колбасу
         }
+
+        //TODO: тут похерилась подсветка туда обратно 
+        //для всех ячеек сбрасываем потом снова отмечаем по диапазону
+
     }, {
         key: '_onDragOver',
         value: function _onDragOver(key, event) {
@@ -91437,13 +91453,26 @@ var BarsEditor = function (_LimitsBaseComponent) {
 
             if (this._previous_hover_key != key) {
                 (0, _LimitsBaseComponent2.log)(event.type, key);
-                this.cellIndexes.forEach(function (el, currkey, m) {
-                    _this3.cellRefs.get(key).className = _this3.getCellStyle(key, true, currkey);
+                this.cellIndexes.forEach(function (el, check_key, m) {
+                    //TODO: BUG если мы подсвечивали ячейку, через класснейм по ссылке то редусер не знает об изменении
+                    //когда мы протягиваем на уже закрашенное - считает что она не меняется - а у нас по факту поменян стиль
+                    //но опять же -когда рисуем еще раз - исправляется 
+                    _this3.cellRefs.get(check_key).className = _this3.getCellStyle(check_key, true, key);
                 });
                 //this._previous_hover_key = undefined
             }
 
             this._previous_hover_key = key;
+
+            //         //----------------------
+            //         let min_idx = Math.min(index, this.selected_index)
+            //          let max_idx = Math.max(index, this.selected_index)
+            // log('подсвечиваем ячейки', min_idx,max_idx)
+            // -        indexes.forEach(
+            // -            el => this.cellRefs.get(el).className = "barEditorHourCell"
+            // -        )    
+            // -        indexes.slice(min_idx,max_idx+1).forEach(
+            // -            el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
         }
     }, {
         key: '_onDrop',
@@ -109178,7 +109207,7 @@ exports = module.exports = __webpack_require__(81)(undefined);
 
 
 // module
-exports.push([module.i, "@charset \"UTF-8\";\n#accounts-table {\n  border-collapse: collapse;\n  border-color: #B7DDF2;\n  border-style: solid;\n  border-width: 1px;\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  margin-top: 5px;\n  text-align: left;\n  width: 100%; }\n  #accounts-table th {\n    font-size: 11px;\n    font-weight: bold;\n    padding: 15px 10px 10px; }\n  #accounts-table tbody tr td {\n    background: none repeat scroll 0 0 #FFFFFF; }\n  #accounts-table tr {\n    border-top: 1px dashed #B7DDF2; }\n  #accounts-table td {\n    color: #000000;\n    padding: 10px; }\n  #accounts-table tbody tr:hover td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n  #accounts-table tbody tr.current td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n\n/* .table > thead > tr > th, \r\n.table > tbody > tr > th, \r\n.table > tfoot > tr > th, \r\n.table > thead > tr > td, \r\n.table > tbody > tr > td, \r\n.table > tfoot > tr > td, \r\n.table > thead > tr > th, \r\n.table-bordered  */\n.accounts_table,\n.accounts_table > thead > tr > th,\n.accounts_table > tbody > tr > td {\n  border: 1px solid #ebeff2;\n  border-collapse: collapse !important;\n  border-spacing: 0 !important; }\n\n.accounts_table {\n  width: 100%; }\n\n.accounts_table > tbody > tr:hover {\n  background: #9f7e19 !important; }\n\n.accounts_table > tbody > tr.current {\n  border: 2px solid #000;\n  background: rgba(255, 68, 68, 0.36) !important; }\n\n/*tr:nth-child(even) {background: #CCC}*/\n/*tr:nth-child(odd) {background: #FFF}*/\ntd:first-child {\n  padding-top: 5px;\n  padding-bottom: 1px;\n  text-align: center;\n  vertical-align: middle;\n  /* пробовал top, bottom, baseline. Не помогает */ }\n\n.accounts_table > thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #ebeff2; }\n", ""]);
+exports.push([module.i, "@charset \"UTF-8\";\n#accounts-table {\n  border-collapse: collapse;\n  border-color: #B7DDF2;\n  border-style: solid;\n  border-width: 1px;\n  font-family: Arial,Helvetica,sans-serif;\n  font-size: 12px;\n  margin-top: 5px;\n  text-align: left;\n  width: 100%; }\n  #accounts-table th {\n    font-size: 11px;\n    font-weight: bold;\n    padding: 15px 10px 10px; }\n  #accounts-table tbody tr td {\n    background: none repeat scroll 0 0 #FFFFFF; }\n  #accounts-table tr {\n    border-top: 1px dashed #B7DDF2; }\n  #accounts-table td {\n    color: #000000;\n    padding: 10px; }\n  #accounts-table tbody tr:hover td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n  #accounts-table tbody tr.current td {\n    background: none repeat scroll 0 0 #FFCF8B;\n    color: #000000; }\n\n/* .table > thead > tr > th, \n.table > tbody > tr > th, \n.table > tfoot > tr > th, \n.table > thead > tr > td, \n.table > tbody > tr > td, \n.table > tfoot > tr > td, \n.table > thead > tr > th, \n.table-bordered  */\n.accounts_table,\n.accounts_table > thead > tr > th,\n.accounts_table > tbody > tr > td {\n  border: 1px solid #ebeff2;\n  border-collapse: collapse !important;\n  border-spacing: 0 !important; }\n\n.accounts_table {\n  width: 100%; }\n\n.accounts_table > tbody > tr:hover {\n  background: #9f7e19 !important; }\n\n.accounts_table > tbody > tr.current {\n  border: 2px solid #000;\n  background: rgba(255, 68, 68, 0.36) !important; }\n\n/*tr:nth-child(even) {background: #CCC}*/\n/*tr:nth-child(odd) {background: #FFF}*/\ntd:first-child {\n  padding-top: 5px;\n  padding-bottom: 1px;\n  text-align: center;\n  vertical-align: middle;\n  /* пробовал top, bottom, baseline. Не помогает */ }\n\n.accounts_table > thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #ebeff2; }\n", ""]);
 
 // exports
 

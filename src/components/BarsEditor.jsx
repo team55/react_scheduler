@@ -32,7 +32,8 @@ export default class BarsEditor extends LimitsBaseComponent {
 
     render() {
         
-        let {days, day_totals, account_schedules,current_account} = {...this.props}
+        // let {days, day_totals, account_schedules,current_account} = {...this.props}
+        let {days, day_totals, account_schedules, current_account} = this.props
         log('RENDER',current_account)     
 
         //let _days =  [...Array(this.props.days).keys()]
@@ -105,19 +106,27 @@ export default class BarsEditor extends LimitsBaseComponent {
 
 
     //----------------------------------------------------
-    getCellStyle(key, interactive, index){
+    getCellStyle(check_key, interactive, key){
 
-        const _selected_schedule = this.props.account_schedules.has(key)
-        const _selected_marker = this.props.account_markers.has(key)
-        const _selected_template = this.props.account_templates.has(key)
+        const _selected_schedule = this.props.account_schedules.has(check_key)
+        const _selected_marker = this.props.account_markers.has(check_key)
+        const _selected_template = this.props.account_templates.has(check_key)
         let _highlight = false
 
         if(interactive){
-            let min_idx = Math.min(index, this.selected_index)
-            let max_idx = Math.max(index, this.selected_index)
-            _highlight = key>=min_idx && key<=max_idx
-        }
+            // let min_idx = Math.min(check_key, this.selected_index)
+            // let max_idx = Math.max(check_key, this.selected_index)
+            // _highlight = key>=min_idx && key<=max_idx
 
+            //От начала, до клетки где находимся
+            let min_idx = Math.min(key, this.selected_index)
+            let max_idx = Math.max(key, this.selected_index)
+            //проверяемая в диапазоне?
+            _highlight = check_key>=min_idx && check_key<=max_idx
+
+            if(_highlight)  log('getCellStyle',key, interactive, check_key, min_idx,max_idx, _highlight)
+        }
+        
         const cellClasses = classNames({
             'barEditorHourCell': true,
             'disabled': _selected_marker, 
@@ -126,7 +135,7 @@ export default class BarsEditor extends LimitsBaseComponent {
             'template': _selected_template,
             'errors': (_selected_marker && _selected_schedule) || (_highlight && _selected_marker)
             //в отрисовке просто так _selected_marker && _selected_schedule
-        });
+            });
 
         return cellClasses
     }
@@ -156,21 +165,42 @@ export default class BarsEditor extends LimitsBaseComponent {
     //----------------------------------------------------
     _onDragStart(key, event){
         // event.dataTransfer.setData('data', JSON.stringify("test")); 
+        log(event.type, key) 
         this.selected_index = key
+
+        //TODO: определить что находимся в уже выделенном - тогда таскаем колбасу
     }
 
+    //TODO: тут похерилась подсветка туда обратно 
+    //для всех ячеек сбрасываем потом снова отмечаем по диапазону
     _onDragOver(key,event) {
         event.preventDefault()
 
         if(this._previous_hover_key != key) {
             log(event.type, key) 
             this.cellIndexes.forEach(
-                (el,currkey,m) => {this.cellRefs.get(key).className = this.getCellStyle(key,true,currkey)
+                (el,check_key,m) => {
+                    //TODO: BUG если мы подсвечивали ячейку, через класснейм по ссылке то редусер не знает об изменении
+                    //когда мы протягиваем на уже закрашенное - считает что она не меняется - а у нас по факту поменян стиль
+                    //но опять же -когда рисуем еще раз - исправляется 
+                    this.cellRefs.get(check_key).className = this.getCellStyle(check_key,true,key)
             })    
             //this._previous_hover_key = undefined
         }
 
         this._previous_hover_key = key
+
+
+//         //----------------------
+//         let min_idx = Math.min(index, this.selected_index)
+//          let max_idx = Math.max(index, this.selected_index)
+// log('подсвечиваем ячейки', min_idx,max_idx)
+// -        indexes.forEach(
+// -            el => this.cellRefs.get(el).className = "barEditorHourCell"
+// -        )    
+// -        indexes.slice(min_idx,max_idx+1).forEach(
+// -            el => this.cellRefs.get(el).className = "barEditorHourCell higlight"
+
     }
     
     _onDrop(key, event) {
