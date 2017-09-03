@@ -44,7 +44,9 @@ export default class SchedulerLimits extends LimitsBaseComponent {
                                                     )}
                                                 </div>
                                                 <div className="account_column">acc2
-                                                    {/*тут надо сетку с итогами по аккаунту*/}
+                                                    {/*тут надо сетку с итогами по аккаунту
+                                                    - берем аккаунт, берем итог по дням 
+                                                    */}
                                                     {[...Array(this.props.days+1).keys()].map((col, j) =>
                                                         <div className="day_column" key={j}>{col}</div>
                                                     )}

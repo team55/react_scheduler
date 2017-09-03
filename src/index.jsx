@@ -66,11 +66,11 @@ function baseJsonRequest(url,method,json) {
 }
 
 async function postJsonRequest(url, body) {
-    log('STEP 1')
+    // log('STEP 1')
     let response = await baseJsonRequest(url,'POST',JSON.stringify(body))
-    log('STEP 2', response)
+    // log('STEP 2', response)
     let json = await response.json()
-    log('STEP 3')
+    // log('STEP 3')
     return json
 }
 
@@ -142,6 +142,25 @@ function editorStateReducer(state, action) {
             cur.tables = cur.hours * el.tables
         } )
 
+        return day_totals
+    }
+
+    //todo:  просчет итогов всех аккаунтов
+    function calculateAllAccountTotals(schedules_map){
+        let day_totals = new Map()
+        let _days =  [...Array(state.days).keys()]
+        _days.map((dd,index_day)=>{
+            day_totals.set(dd+1,{hours:0, tables:0, hands:0})
+        })
+        //пересчитывает итоги по расписанию аккаунта
+        //вызывается при получении и редактировании расписания
+        //число часов, число столов, число рук (нужны показатели по лимитам аккаунта)
+        schedules_map.forEach( (el,key,s)=> {
+            log(el,key)
+            let cur = day_totals.get(el.day+1) //0 based
+            cur.hours++
+            cur.tables = cur.hours * el.tables
+        } )
 
         return day_totals
     }
@@ -307,9 +326,6 @@ function editorStateReducer(state, action) {
                 account_schedules:acc_schedules,
                 day_totals:day_totals} 
 
-
-
-
         }
 
 
@@ -322,6 +338,7 @@ function editorStateReducer(state, action) {
             let start = moment.utc(state.month).startOf('month')
             let end = moment.utc(state.month).endOf('month')
             let days = end.diff(start, 'days')
+            
             return {...state, start_month:start, end_month:end, days: days, /*число дней между датами*/}
             //return state;
     }
