@@ -146,82 +146,92 @@ function editorStateReducer(state, action) {
     }
 
     //todo:  просчет итогов всех аккаунтов
-    function calculateAllAccountTotals(schedules_map){
-        let day_totals = new Map()
-        let _days =  [...Array(state.days).keys()]
-        _days.map((dd,index_day)=>{
-            day_totals.set(dd+1,{hours:0, tables:0, hands:0})
+    function calculateAllAccountTotals(){
+        let totals = new Map()
+        let accs = new Map()
+        state.accounts.forEach((acc)=>{
+            accs.set(acc.accid, acc)
         })
-        //пересчитывает итоги по расписанию аккаунта
-        //вызывается при получении и редактировании расписания
-        //число часов, число столов, число рук (нужны показатели по лимитам аккаунта)
-        schedules_map.forEach( (el,key,s)=> {
-            log(el,key)
-            let cur = day_totals.get(el.day+1) //0 based
-            cur.hours++
-            cur.tables = cur.hours * el.tables
-        } )
 
-        return day_totals
+        state.schedules.forEach((acc)=>{
+            let account_schedules = new Map()
+            prepareMap(account_schedules, acc.schedules, accs.get(acc.accid)) //тут записи расписания по аккаунтам - нам нужна мапа по аккаунтам
+            let day_totals = calculateAccountTotals(account_schedules)
+            //установить в мапу итогов у аккаунта
+            totals.set(acc.accid, day_totals)
+        })
     }
 
+    function prepareMap(m,src, acc){
+        src.forEach(dt=>{
+            let idx_start = (dt[0]-1)*24 + dt[1]    
+            let idx_stop = (dt[2]-1)*24 + dt[3]    
+            //log('start creating',idx_start, idx_stop)    
+            for (let i = idx_start; i <= idx_stop; i++) {
+                m.set(i, {
+                    tables:acc.tables,
+                    day: Math.floor( (i/24) ),
+                    // hour: i - ((i/24)+1) * 24
+                } ) 
+            }
+        })
+    }
     
+    function setCurrentAccountData(){
+
+        //Подготовка расписания по аккаунту
+        let account_schedules = new Map()
+        let account_markers = new Map()
+        let account_templates = new Map()
+        //let all_schedules = new Map() 
+        //let color = getColor(action.payload..accid)
+
+        state.schedules
+            .filter(s=>s.accid===action.payload.accid)
+            .forEach((acc)=>{
+                prepareMap(account_schedules, acc.schedules, action.payload)
+                prepareMap(account_markers,   acc.markers, action.payload)
+                prepareMap(account_templates, acc.templates, action.payload)
+        })
+
+        let day_totals = calculateAccountTotals(account_schedules)
+
+        return {
+            account_schedules:account_schedules,
+            account_markers:account_markers,
+            account_templates:account_templates,
+
+            //это бы установить у аккаунтов - точнее конкретного аккаунта? соответственно и пересчитывается только при изменении потом
+            day_totals:day_totals
+        }
+    }
+
+
     switch (action.type) {
 
         case CMD.TOGGLE_MODE:
+
+            //TODO: подтянуть данные пор расписанию выбранных аккаунтов
+            //включить оповещение по выбранным аккаунтам
+
+            //в режим общего списка аккаунтов - оповещение по списку аккаунтов в расписании (по всем точнее что в фильтре)
+
             return { ...state, current_mode: state.current_mode === 'edit'?'view':'edit' }
 
+
         case CMD.SET_ACCOUNT:
+            //TODO: только для режима редактирования
 
             //если в пайлод запихнули параметры то можем их все пробросить в стейт
             //но если надо делать какое то действие то не обойтись без логики (хотя мы же можем и функцию передать которой обработать)
-            let prepareMap = function(m,src){
-                src.forEach(dt=>{
-                    let idx_start = (dt[0]-1)*24 + dt[1]    
-                    let idx_stop = (dt[2]-1)*24 + dt[3]    
-                    //log('start creating',idx_start, idx_stop)    
-                    for (let i = idx_start; i <= idx_stop; i++) {
-                        m.set(i, {
-                            tables:action.payload.tables,
-                            day: Math.floor( (i/24) ),
-                            // hour: i - ((i/24)+1) * 24
-                        } ) 
-                    }
-                })
-            }
-
             //ЧИТАЕМ С БАЗЫ ДАННЫХ
             //МАПИМ В КОЛЛЕКЦИИ часов
 
-
-            //Подготовка расписания по аккаунту
-            let account_schedules = new Map()
-            let account_markers = new Map()
-            let account_templates = new Map()
-            let all_schedules = new Map() 
-
-            let color = getColor(action.payload)
-
-            state.schedules
-                .filter(s=>s.accid===action.payload.accid)
-                .forEach((acc)=>{
-                    prepareMap(account_schedules, acc.schedules)
-                    prepareMap(account_markers,   acc.markers)
-                    prepareMap(account_templates, acc.templates)
-            })
-
-            let day_totals = calculateAccountTotals(account_schedules)
-
-            return {...state, 
-                current_account: action.payload,
-                account_schedules:account_schedules,
-                account_markers:account_markers,
-                account_templates:account_templates,
-                day_totals:day_totals
-            }
-            
+            let accountInfo = setCurrentAccountData() //object
+            return {...state, ...accountInfo, current_account: action.payload}
 
         case CMD.MARK_ACCOUNT:{
+
             let newstate = state.accounts.slice() //именно копия иначе будет ссылка на тот же массив   
             newstate.forEach(e=>{
                 if(e.accid==action.payload) e.selected = !e.selected 
@@ -333,14 +343,32 @@ function editorStateReducer(state, action) {
             return { ...state} 
         }
 
+        case CMD.INITIAL_DATA_LOAD: {
+            //TODO: привязать к событию монтирования компонента
+            //зафетчить набор данных из файла
+            //смержить с первоначальным стейтом
+               
+            return { ...state, current_mode:'loading'} //edit, view, update  
+        }
+
+        case CMD.INITIAL_DATA_LOADED: {
+            //после загрузки обработаем данные    
+            let totals = calculateAllAccountTotals() //TODO: тут нужен стейт по дням - и событие загрузки данных при монтировании компоненты 
+            return { ...state, totals: totals} 
+        }
 
         default: //@@redux.INIT
             let start = moment.utc(state.month).startOf('month')
             let end = moment.utc(state.month).endOf('month')
             let days = end.diff(start, 'days')
             
-            return {...state, start_month:start, end_month:end, days: days, /*число дней между датами*/}
-            //return state;
+            
+            return {...state, 
+                start_month:start, 
+                end_month:end, 
+                days: days, /*число дней между датами*/ 
+            }
+            
     }
 
 }

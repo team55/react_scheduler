@@ -14,9 +14,14 @@ export const initialState = {
     //TODO: поведение когда подгрузился аккаунт по фильтру - например убрали лимиты
     accounts: [
         {accid:1000, name:'acc1', comp_name:'comp1', selected:false, limits:[], tables:6},
-        {accid:1001, name:'acc2', comp_name:'comp1', selected:false, limits:[], tables:4}, //по этому нет данных
+        {accid:1001, name:'acc2', comp_name:'comp1', selected:false, limits:[], tables:4}, 
         {accid:1002, name:'acc3', comp_name:'comp2', selected:true,  limits:[], tables:6}]
     ,
+    // accounts: {
+    //     "1000": {name:'acc1', comp_name:'comp1', selected:false, limits:[], tables:6},
+    //     "1001": {name:'acc2', comp_name:'comp1', selected:false, limits:[], tables:4}, 
+    //     "1002": {name:'acc3', comp_name:'comp2', selected:true,  limits:[], tables:6}
+    // },
     //вот тут вопрос - засунуть это в аккаунт или хранить отдельно
     //TODO: это должно быть в редусере
     //TODO: не разбить ли на отдельные записи?
@@ -38,5 +43,5 @@ export const initialState = {
     //MODES: edit, view
     current_mode: 'view', 
     month: '2017-08-01 00:00:00', 
-    state: 'loading' //ready - работаем или показываем прогресс бар
+    current_state: 'loading' //ready - работаем или показываем прогресс бар
 }
